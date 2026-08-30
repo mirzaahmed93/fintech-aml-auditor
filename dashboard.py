@@ -347,14 +347,32 @@ with tab2:
         tier1_resolved = sum(1 for res in audit_results if res["tier"] == 1)
         auto_routing_rate = (tier1_resolved / total_tx) * 100.0
         
+        # Calculate Ground Truth for each transaction to measure AI accuracy
+        def get_ground_truth(tx):
+            # Safe suffixes or middle initials match
+            def clean_name(name):
+                n = name.lower()
+                n = re.sub(r"\b(corp|corporation|ltd|limited|inc|incorporated|llc)\b", "", n)
+                n = re.sub(r"\b[a-z]\b\.?", "", n)
+                n = re.sub(r"\s+", " ", n).strip()
+                return n
+            is_safe = clean_name(tx.remitter) == clean_name(tx.customer)
+            is_shell = "shell" in tx.remitter.lower() or "shell" in tx.customer.lower()
+            if is_shell:
+                return "BLOCK"
+            if is_safe:
+                return "APPROVE"
+            # Fallback to fuzzy ratio
+            from rapidfuzz import fuzz
+            score = fuzz.token_sort_ratio(tx.remitter.lower(), tx.customer.lower()) / 100.0
+            return "APPROVE" if score >= 0.90 else "BLOCK"
+            
         correct_predictions = 0
         for tx, res in zip(transactions, audit_results):
-            unique_tx_key = state_key_prefix + tx.tx_id
-            status = st.session_state.tx_states[unique_tx_key]
+            # AI accuracy measures how often the selected AI model's decision matches the compliance ground truth
             ai_decision = res["decision"]
-            if ai_decision == "BLOCK" and status in ["HALTED", "SEIZED"]:
-                correct_predictions += 1
-            elif ai_decision == "APPROVE" and status in ["AUTO_APPROVED", "RELEASED"]:
+            ground_truth = get_ground_truth(tx)
+            if ai_decision == ground_truth:
                 correct_predictions += 1
         ai_accuracy = (correct_predictions / total_tx) * 100.0
         
