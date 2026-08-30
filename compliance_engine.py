@@ -184,7 +184,7 @@ async def main():
     engine = ComplianceEngine()
     txs = generate_transaction_stream(50)
     
-    print(f"🚀 Fintech Compliance Engine: Auditing {len(txs)} Transactions...")
+    print(f" Fintech Compliance Engine: Auditing {len(txs)} Transactions...")
     print("=" * 75)
     for tx in txs[:10]: # Print first 10 for demo validation
         result = await engine.audit_transaction(tx)

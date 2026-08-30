@@ -14,7 +14,7 @@ load_dotenv()
 # Setup page config for a premium dark-themed layout
 st.set_page_config(
     page_title="Fintech AML Compliance Auditor",
-    page_icon="🛡️",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -123,7 +123,7 @@ def generate_audit_report(pr_code, is_poisoned, threshold):
     if is_poisoned:
         decision = "BLOCK"
         narrative = (
-            f"🚨 Compliance Block (High Risk): The code change sets the fuzzy match threshold to {threshold}, "
+            f" Compliance Block (High Risk): The code change sets the fuzzy match threshold to {threshold}, "
             "which is below the strict 90% baseline. Under FinCEN CDD Rule (31 CFR § 1010.230), automated payment "
             "reconciliation below 90% without human-in-the-loop triggers is prohibited to mitigate Third-Party Payment "
             "Risk. Decision: BLOCK."
@@ -131,14 +131,14 @@ def generate_audit_report(pr_code, is_poisoned, threshold):
     else:
         decision = "APPROVE"
         narrative = (
-            f"✅ Compliance Approved: The matching threshold is set to {threshold}, which satisfies the strict 90% "
+            f" Compliance Approved: The matching threshold is set to {threshold}, which satisfies the strict 90% "
             "baseline for automated name reconciliation under the FinCEN Customer Due Diligence (CDD) Final Rule "
             "(31 CFR § 1010.230). Decision: APPROVE."
         )
     return decision, narrative
 
 # Header
-st.title("🛡️ Fintech AML Compliance Auditor")
+st.title(" Fintech AML Compliance Auditor")
 st.subheader("Human-In-The-Loop (HITL) Regulatory Verification Portal")
 st.markdown("---")
 
@@ -149,7 +149,7 @@ if "tx_states" not in st.session_state:
     st.session_state.tx_states = {}
 
 # Sidebar: Select Active Policy Model
-st.sidebar.header("🤖 Active Policy Model")
+st.sidebar.header(" Active Policy Model")
 model_options = ["Baseline Model (Pre-RL)", "Aligned Model (Post-RL)"]
 default_idx = 1 if st.session_state.model_aligned else 0
 
@@ -162,12 +162,12 @@ active_policy_key = "baseline" if selected_policy == "Baseline Model (Pre-RL)" e
 
 # Show visual status in sidebar
 if active_policy_key == "baseline":
-    st.sidebar.warning("⚠️ Running Unaligned Baseline. Expect false positives/negative escapes.")
+    st.sidebar.warning(" Running Unaligned Baseline. Expect false positives/negative escapes.")
 else:
-    st.sidebar.success("🚀 Running Compliance-Aligned Model. LoRA adapter active.")
+    st.sidebar.success(" Running Compliance-Aligned Model. LoRA adapter active.")
 
 # Setup Tabs
-tab1, tab2 = st.tabs(["📁 Pull Request Audits", "💸 Live Transaction Stream"])
+tab1, tab2 = st.tabs([" Pull Request Audits", " Live Transaction Stream"])
 
 with tab1:
     prs_dir = "synthetic_prs"
@@ -175,7 +175,7 @@ with tab1:
         st.error(f"Please run `python3 generate_poisoned_prs.py` first to generate mock PRs in '{prs_dir}/'.")
     else:
         # Sidebar: Select PR
-        st.sidebar.header("📁 Pull Request Inbox")
+        st.sidebar.header(" Pull Request Inbox")
         pr_files = sorted([f for f in os.listdir(prs_dir) if f.endswith("_matcher_agent.py")])
         pr_display = []
         for f in pr_files:
@@ -186,7 +186,7 @@ with tab1:
                 with open(meta_path, "r") as meta_f:
                     meta = meta_f.read()
                 is_poisoned = "POISONED:True" in meta
-                label += " (⚠️ Poisoned)" if is_poisoned else " (✅ Safe)"
+                label += " ( Poisoned)" if is_poisoned else " ( Safe)"
             pr_display.append((label, f, pr_id))
 
         if pr_display:
@@ -218,17 +218,17 @@ with tab1:
             col1, col2 = st.columns([3, 2])
 
             with col1:
-                st.markdown(f"### 🔍 Audit Report - PR #{selected_id}")
+                st.markdown(f"###  Audit Report - PR #{selected_id}")
                 
                 # Status Alert
                 if decision == "BLOCK":
                     st.markdown(
-                        '<div class="status-badge status-blocked">🚨 COMPLIANCE ALERT: ACTION REQUIRED (BLOCKED)</div>',
+                        '<div class="status-badge status-blocked"> COMPLIANCE ALERT: ACTION REQUIRED (BLOCKED)</div>',
                         unsafe_allow_html=True
                     )
                 else:
                     st.markdown(
-                        '<div class="status-badge status-approved">✅ COMPLIANCE STATUS: CLEAN (APPROVED)</div>',
+                        '<div class="status-badge status-approved"> COMPLIANCE STATUS: CLEAN (APPROVED)</div>',
                         unsafe_allow_html=True
                     )
                     
@@ -239,11 +239,11 @@ with tab1:
                 st.markdown("#### Proposed System Changes Summary")
                 
                 proposed_color = "#ef4444" if threshold < 0.90 else "#22c55e"
-                risk_label = "🚨 HIGH RISK (Bypasses manual due-diligence checks)" if threshold < 0.90 else "✅ COMPLIANCE MET (Satisfies safety baseline)"
+                risk_label = " HIGH RISK (Bypasses manual due-diligence checks)" if threshold < 0.90 else " COMPLIANCE MET (Satisfies safety baseline)"
                 
                 st.markdown(f"""
                 <div class="impact-card">
-                    <h4 style="color: #60a5fa; margin-top: 0; margin-bottom: 12px;">🛠️ Policy Modification Parameters</h4>
+                    <h4 style="color: #60a5fa; margin-top: 0; margin-bottom: 12px;"> Policy Modification Parameters</h4>
                     <table style="width: 100%; border-collapse: collapse;">
                         <tr style="border-bottom: 1px solid #334155;">
                             <td style="padding: 10px 0; color: #94a3b8;"><strong>Affected Core Code</strong></td>
@@ -266,7 +266,7 @@ with tab1:
                 """, unsafe_allow_html=True)
 
             with col2:
-                st.markdown("### ⚖️ Regulatory Citations")
+                st.markdown("###  Regulatory Citations")
                 
                 # Regulatory Citation Lookup
                 cits_found = []
@@ -295,19 +295,19 @@ with tab1:
                 )
                 
                 # Human in the Loop Decision Center
-                st.markdown("#### 🧑‍⚖️ Decision Center (HITL)")
+                st.markdown("#### ‍ Decision Center (HITL)")
                 st.markdown("Determine the final status of this PR. Your decision will override the AI audit and log the verification details.")
                 
                 action_col1, action_col2 = st.columns(2)
                 with action_col1:
-                    if st.button("Confirm Block 🚫"):
-                        st.toast("PR Blocked. Developer notified to fix the threshold rules.", icon="🚫")
+                    if st.button("Confirm Block "):
+                        st.toast("PR Blocked. Developer notified to fix the threshold rules.", icon="")
                 with action_col2:
-                    if st.button("Override & Approve ✅"):
-                        st.toast("Override applied. PR marked as approved for deployment.", icon="✅")
+                    if st.button("Override & Approve "):
+                        st.toast("Override applied. PR marked as approved for deployment.", icon="")
 
 with tab2:
-    st.header("💸 Live Transaction Compliance Stream & Halted Funds Escrow")
+    st.header(" Live Transaction Compliance Stream & Halted Funds Escrow")
     st.markdown(
         "This portal displays live transaction evaluations under our **Tiered Compliance Routing Architecture**. "
         "High-fidelity transactions are auto-resolved. Suspected mismatches are **Halted & Escrowed** in real-time, "
@@ -385,7 +385,7 @@ with tab2:
         if active_policy_key == "baseline" and overrides_count > 0:
             st.markdown(f"""
             <div class="retrain-banner">
-                <h4 style="color: #3b82f6; margin-top: 0; margin-bottom: 8px;">⚡ Human-Feedback Training Loop Ready</h4>
+                <h4 style="color: #3b82f6; margin-top: 0; margin-bottom: 8px;"> Human-Feedback Training Loop Ready</h4>
                 <p style="margin: 0; color: #cbd5e1; font-size: 14.5px;">
                     You have corrected <strong>{overrides_count}</strong> transaction audits. You can run an incremental 
                     Reinforcement Learning (GRPO) training cycle to tune the model's policy weights directly on your feedback.
@@ -393,19 +393,19 @@ with tab2:
             </div>
             """, unsafe_allow_html=True)
             
-            if st.button("⚡ Fine-Tune Auditor Model on Overrides"):
+            if st.button(" Fine-Tune Auditor Model on Overrides"):
                 progress_bar = st.progress(0)
                 for percent in range(1, 101):
                     time.sleep(0.015)  # Simulate model update steps
                     progress_bar.progress(percent)
-                st.success("🎉 LoRA weights updated successfully! Policy aligned with human compliance overrides.")
+                st.success(" LoRA weights updated successfully! Policy aligned with human compliance overrides.")
                 st.session_state.model_aligned = True
                 st.session_state.tx_states.clear() # Clear memory states to reload under aligned rules
                 time.sleep(1.0)
                 st.rerun()
                 
         elif st.session_state.model_aligned and active_policy_key == "aligned":
-            st.success("🌟 Compliance-Aligned Model Active. Notice that false alarms have been resolved automatically by the trained weights!")
+            st.success(" Compliance-Aligned Model Active. Notice that false alarms have been resolved automatically by the trained weights!")
             
             if st.button("Reset Simulation"):
                 st.session_state.model_aligned = False
@@ -421,29 +421,29 @@ with tab2:
                 
             # Badge formatting based on active status state
             if current_status == "HALTED":
-                status_label = "❌ HALTED & ESCROWED (Awaiting Review)"
+                status_label = " HALTED & ESCROWED (Awaiting Review)"
                 status_color = "#ef4444"
                 status_bg = "rgba(239, 68, 68, 0.15)"
             elif current_status == "RELEASED":
-                status_label = "✅ RELEASED BY COMPLIANCE AUDITOR"
+                status_label = " RELEASED BY COMPLIANCE AUDITOR"
                 status_color = "#22c55e"
                 status_bg = "rgba(34, 197, 94, 0.15)"
             elif current_status == "SEIZED":
-                status_label = "🚫 FUNDS PERMANENTLY SEIZED & FROZEN"
+                status_label = " FUNDS PERMANENTLY SEIZED & FROZEN"
                 status_color = "#94a3b8"
                 status_bg = "rgba(148, 163, 184, 0.15)"
             else:
-                status_label = "✅ AUTO-APPROVED"
+                status_label = " AUTO-APPROVED"
                 status_color = "#22c55e"
                 status_bg = "rgba(34, 197, 94, 0.15)"
             
             # Tier formatting
             if res["tier"] == 1:
-                tier_badge = "⚡ Tier 1 (Rules)"
+                tier_badge = " Tier 1 (Rules)"
                 tier_color = "#60a5fa"
                 tier_bg = "rgba(96, 165, 250, 0.15)"
             else:
-                tier_badge = "🤖 Tier 2 (AI Escalate)"
+                tier_badge = " Tier 2 (AI Escalate)"
                 tier_color = "#f59e0b"
                 tier_bg = "rgba(245, 158, 11, 0.15)"
                 
@@ -454,7 +454,7 @@ with tab2:
                     <div>
                         <strong style="color: #60a5fa; font-size: 17px; font-family: monospace;">{tx.tx_id}</strong> 
                         <span style="color: #64748b; margin: 0 10px;">|</span>
-                        <span style="font-size: 15px;"><strong>Remitter:</strong> {tx.remitter} ➔ <strong>Customer:</strong> {tx.customer}</span>
+                        <span style="font-size: 15px;"><strong>Remitter:</strong> {tx.remitter}  <strong>Customer:</strong> {tx.customer}</span>
                         <span style="color: #64748b; margin: 0 10px;">|</span>
                         <strong style="color: #cbd5e1;">Amount: ${tx.amount:,.2f}</strong>
                     </div>
@@ -481,7 +481,7 @@ with tab2:
                         st.rerun()
             
             # Expandable Details Panel for Raw Data and Deep Reasoning
-            with st.expander("🔍 Click to view Raw Transaction Data & Deep Audit Reasoning"):
+            with st.expander(" Click to view Raw Transaction Data & Deep Audit Reasoning"):
                 # Construct clean raw payload dictionary for the transaction
                 raw_payload = {
                     "transaction_id": tx.tx_id,
@@ -510,11 +510,11 @@ with tab2:
                 
                 exp_col1, exp_col2 = st.columns(2)
                 with exp_col1:
-                    st.markdown("##### 📁 Raw Transaction Payload (JSON)")
+                    st.markdown("#####  Raw Transaction Payload (JSON)")
                     st.json(raw_payload)
                     
                 with exp_col2:
-                    st.markdown("##### 🤖 Deep Reasoning & Graph Context")
+                    st.markdown("#####  Deep Reasoning & Graph Context")
                     
                     # Compute match metrics
                     score = res["score"]
@@ -523,21 +523,21 @@ with tab2:
                     # Governing Law Checklist
                     st.markdown("**Compliance Checklist Metrics:**")
                     if score >= 0.90:
-                        st.markdown("✅ `Originator Identity Verified (>90% Match)`")
+                        st.markdown(" `Originator Identity Verified (>90% Match)`")
                     else:
-                        st.markdown("❌ `Originator Name Mismatch (<90% Match Tolerance)`")
+                        st.markdown(" `Originator Name Mismatch (<90% Match Tolerance)`")
                         
                     if tx.amount > 100000.00:
-                        st.markdown("⚠️ `High-Value Settlement (> $100K High Risk Flag)`")
+                        st.markdown(" `High-Value Settlement (> $100K High Risk Flag)`")
                     else:
-                        st.markdown("✅ `Standard Settlement Volume`")
+                        st.markdown(" `Standard Settlement Volume`")
                         
-                    st.markdown("✅ `Auto-Reconciliation Compliance Check`")
+                    st.markdown(" `Auto-Reconciliation Compliance Check`")
                     
                     # Graphify Knowledge Graph relationship mapping
                     st.markdown("**Graphify Extraction Path:**")
                     graph_path = (
-                        f"`src/matcher_agent.py` ➔ `reconcile_payment()` ➔ `[governed_by]` ➔ `31 CFR § 1010.230 (CDD Final Rule)`"
+                        f"`src/matcher_agent.py`  `reconcile_payment()`  `[governed_by]`  `31 CFR § 1010.230 (CDD Final Rule)`"
                     )
                     st.code(graph_path)
                     st.markdown(

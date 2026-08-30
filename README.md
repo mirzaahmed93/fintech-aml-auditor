@@ -4,7 +4,7 @@ An automated, reinforcement-learning-powered Pull Request (PR) compliance audito
 
 ---
 
-## 🎯 Mission & Objectives
+##  Mission & Objectives
 
 In modern fintech, minor modifications to transaction matching thresholds can bypass security controls and facilitate trade-based money laundering (TBML) or fraudulent activities. This auditor is designed to:
 1. **Bridge the gap between regulatory requirements and source code** using semantic knowledge graphs.
@@ -14,7 +14,7 @@ In modern fintech, minor modifications to transaction matching thresholds can by
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```mermaid
 graph TD
@@ -41,7 +41,7 @@ graph TD
 
 ---
 
-## 🖥️ Streamlit Compliance Portal (Demo Overview)
+##  Streamlit Compliance Portal (Demo Overview)
 
 The project includes a premium human-in-the-loop verification portal ([`dashboard.py`](file:///Users/ahmedmirza/git/fintech-aml-auditor/dashboard.py)). Run the portal locally using:
 ```bash
@@ -50,23 +50,23 @@ streamlit run dashboard.py
 
 The portal exposes two key operational areas:
 
-### Tab 1: 📁 Pull Request Audits (Code Safety Review)
+### Tab 1:  Pull Request Audits (Code Safety Review)
 * **Inbox**: Select from 50 synthetic PR changes generated during testing.
 * **AI Auditor Narrative**: Explains the AML compliance risk of the code change.
 * **Compliance Impact Card**: Summarizes the system modifications in a non-technical grid (e.g. comparing the proposed threshold changes against the 90% FinCEN baseline) for regulators.
 * **HITL Decision Center**: Allows the officer to manually confirm blocks or apply overrides.
 
-### Tab 2: 💸 Live Transaction Stream & Halted Funds Escrow
+### Tab 2:  Live Transaction Stream & Halted Funds Escrow
 * **Real-time Performance Metrics**: Displays transaction screening counts, auto-routing rates, live AI accuracy, and escrowed capital.
 * **Collapsible Details (Raw & Reasoning)**: Allows inspectors to expand any transaction card to view:
   * **Raw JSON Payload**: Complete transaction structure (banking records, accounts, clearing routes).
   * **Deep Reasoning**: Matching similarity scores, compliance checklists, and the Graphify relationship mapping path.
-* **Active Escrow Controls**: Flagged transactions are placed in a flashing `❌ HALTED & ESCROWED` state. Officers can click `Release Funds` or `Seize Funds` to update the transaction state.
-* **Interactive Retraining**: If overrides are made on the unaligned model, a banner appears enabling you to click **`⚡ Fine-Tune Auditor Model on Overrides`**. This runs an incremental training epoch, updating the policy weights to automatically resolve those edge cases correctly next time.
+* **Active Escrow Controls**: Flagged transactions are placed in a flashing ` HALTED & ESCROWED` state. Officers can click `Release Funds` or `Seize Funds` to update the transaction state.
+* **Interactive Retraining**: If overrides are made on the unaligned model, a banner appears enabling you to click **` Fine-Tune Auditor Model on Overrides`**. This runs an incremental training epoch, updating the policy weights to automatically resolve those edge cases correctly next time.
 
 ---
 
-## 📂 Repository Structure
+##  Repository Structure
 
 * `docs/fincen_bsa_manual.md`: Regulatory manual detailing CDD guidelines and thresholds.
 * `src/matcher_agent.py`: Baseline name-matching reconciliation engine.
@@ -79,7 +79,7 @@ The portal exposes two key operational areas:
 
 ---
 
-## 🚀 Setup & Installation
+##  Setup & Installation
 
 ### 1. Initialize Environment
 Set up a local virtual environment:
@@ -109,7 +109,7 @@ python3 generate_poisoned_prs.py
 
 ---
 
-## 💻 Running the Pipelines
+##  Running the Pipelines
 
 ### 1. Rebuild the Knowledge Graph
 Ensure your `.env` contains your Gemini credentials and run the extraction:

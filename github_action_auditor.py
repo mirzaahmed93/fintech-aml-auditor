@@ -16,13 +16,13 @@ def run_compliance_audit(pr_files):
     
     # Mock output
     decision = "BLOCK"
-    narrative = "🚨 Compliance Block (High Risk): The fuzzy match tolerance violates FinCEN CDD Rule (31 CFR § 1010.230)."
+    narrative = " Compliance Block (High Risk): The fuzzy match tolerance violates FinCEN CDD Rule (31 CFR § 1010.230)."
     
     if decision == "BLOCK":
         print(narrative)
         sys.exit(1)
     else:
-        print("✅ PR is AML Compliant. Approving.")
+        print(" PR is AML Compliant. Approving.")
         sys.exit(0)
 
 if __name__ == "__main__":
