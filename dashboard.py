@@ -4,6 +4,10 @@ import re
 import difflib
 import json
 import google.generativeai as genai
+from dotenv import load_dotenv
+
+# Load local environment variables (.env)
+load_dotenv()
 
 # Setup page config for a premium dark-themed layout
 st.set_page_config(
