@@ -30,13 +30,14 @@ st.markdown("""
         color: white;
         border-radius: 8px;
         border: none;
-        padding: 10px 24px;
+        padding: 8px 18px;
+        font-size: 13px;
         transition: all 0.3s ease;
     }
     .stButton>button:hover {
         background-color: #2563eb;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4);
     }
     .status-badge {
         padding: 6px 16px;
@@ -62,10 +63,12 @@ st.markdown("""
         border-radius: 8px;
         margin-bottom: 16px;
     }
-    .diff-container {
-        border-radius: 8px;
-        overflow: hidden;
+    .impact-card {
+        background-color: #1e293b;
         border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 16px;
     }
     h1, h2, h3 {
         font-family: 'Outfit', 'Inter', sans-serif;
@@ -135,7 +138,6 @@ st.markdown("---")
 tab1, tab2 = st.tabs(["📁 Pull Request Audits", "💸 Live Transaction Stream"])
 
 with tab1:
-    # Setup Directories
     prs_dir = "synthetic_prs"
     if not os.path.exists(prs_dir):
         st.error(f"Please run `python3 generate_poisoned_prs.py` first to generate mock PRs in '{prs_dir}/'.")
@@ -166,9 +168,6 @@ with tab1:
             baseline_path = "src/matcher_agent.py"
             pr_path = os.path.join(prs_dir, selected_file)
             meta_path = os.path.join(prs_dir, f"pr_{selected_id}_meta.txt")
-
-            with open(baseline_path, "r") as f:
-                baseline_code = f.read()
 
             with open(pr_path, "r") as f:
                 pr_code = f.read()
@@ -204,58 +203,35 @@ with tab1:
                 st.markdown("#### AI Auditor Narrative")
                 st.info(narrative)
                 
-                # Git Code Diff
-                st.markdown("#### Code Difference (Git Diff)")
+                # Non-Technical Compliance Impact Card instead of raw diff
+                st.markdown("#### Proposed System Changes Summary")
                 
-                # Calculate Diff
-                diff = difflib.HtmlDiff().make_table(
-                    baseline_code.splitlines(),
-                    pr_code.splitlines(),
-                    fromdesc="Baseline (matcher_agent.py)",
-                    todesc=f"PR #{selected_id} (matcher_agent.py)"
-                )
+                proposed_color = "#ef4444" if threshold < 0.90 else "#22c55e"
+                risk_label = "🚨 HIGH RISK (Bypasses manual due-diligence checks)" if threshold < 0.90 else "✅ COMPLIANCE MET (Satisfies safety baseline)"
                 
-                # Render with dark mode styling for the table
-                custom_css = """
-                <style>
-                    table.diff {
-                        font-family: 'Courier New', Courier, monospace; 
-                        border: 1px solid #334155; 
-                        width: 100%;
-                        background-color: #1e293b;
-                        color: #f1f5f9;
-                        border-collapse: collapse;
-                    }
-                    .diff_header {
-                        background-color: #0f172a;
-                        color: #64748b;
-                        text-align: right;
-                        padding: 2px 8px;
-                        border-right: 1px solid #334155;
-                        user-select: none;
-                    }
-                    td {
-                        padding: 2px 10px;
-                    }
-                    .diff_next {
-                        background-color: #334155;
-                        display: none;
-                    }
-                    .diff_add {
-                        background-color: rgba(34, 197, 94, 0.2) !important;
-                        color: #4ade80;
-                    }
-                    .diff_chg {
-                        background-color: rgba(234, 179, 8, 0.2) !important;
-                        color: #facc15;
-                    }
-                    .diff_sub {
-                        background-color: rgba(239, 68, 68, 0.2) !important;
-                        color: #f87171;
-                    }
-                </style>
-                """
-                st.components.v1.html(custom_css + diff, height=350, scrolling=True)
+                st.markdown(f"""
+                <div class="impact-card">
+                    <h4 style="color: #60a5fa; margin-top: 0; margin-bottom: 12px;">🛠️ Policy Modification Parameters</h4>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr style="border-bottom: 1px solid #334155;">
+                            <td style="padding: 10px 0; color: #94a3b8;"><strong>Affected Core Code</strong></td>
+                            <td style="padding: 10px 0; font-family: monospace; color: #cbd5e1;">src/matcher_agent.py (reconcile_payment)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #334155;">
+                            <td style="padding: 10px 0; color: #94a3b8;"><strong>Standard Compliance Target</strong></td>
+                            <td style="padding: 10px 0; font-weight: bold; color: #22c55e;">90% Match Verification</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #334155;">
+                            <td style="padding: 10px 0; color: #94a3b8;"><strong>Developer Proposed Setting</strong></td>
+                            <td style="padding: 10px 0; font-weight: bold; color: {proposed_color};">{int(threshold * 100)}% Match Tolerance</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px 0; color: #94a3b8;"><strong>Policy Assessment</strong></td>
+                            <td style="padding: 10px 0; font-weight: bold; color: {proposed_color};">{risk_label}</td>
+                        </tr>
+                    </table>
+                </div>
+                """, unsafe_allow_html=True)
 
             with col2:
                 st.markdown("### ⚖️ Regulatory Citations")
@@ -299,12 +275,17 @@ with tab1:
                         st.toast("Override applied. PR marked as approved for deployment.", icon="✅")
 
 with tab2:
-    st.header("💸 Live Transaction Compliance Stream")
+    st.header("💸 Live Transaction Compliance Stream & Halted Funds Escrow")
     st.markdown(
-        "This portal simulates real-time transaction processing under a **Tiered Compliance Routing Architecture**. "
-        "High-fidelity transactions are auto-resolved immediately in Tier 1. Ambiguous cases are routed to Tier 2 (AI Cognitive Audit)."
+        "This portal displays live transaction evaluations under our **Tiered Compliance Routing Architecture**. "
+        "High-fidelity transactions are auto-resolved. Suspected mismatches are **Halted & Escrowed** in real-time, "
+        "requiring compliance officers to release or seize the funds."
     )
     
+    # Initialize in-memory transaction states in st.session_state
+    if "tx_states" not in st.session_state:
+        st.session_state.tx_states = {}
+
     # Import Compliance Engine
     try:
         from compliance_engine import ComplianceEngine, Transaction
@@ -328,20 +309,44 @@ with tab2:
         asyncio.set_event_loop(loop)
         audit_results = loop.run_until_complete(run_audits())
         
-        st.markdown("### Active Transaction Stream Log")
+        st.markdown("### Active Transaction Ledger")
         
         # Grid rendering
         for tx, res in zip(transactions, audit_results):
-            status_color = "#22c55e" if res["decision"] == "APPROVE" else "#ef4444"
-            status_bg = "rgba(34, 197, 94, 0.1)" if res["decision"] == "APPROVE" else "rgba(239, 68, 68, 0.1)"
+            # Resolve current HITL state
+            current_status = st.session_state.tx_states.get(tx.tx_id)
+            if current_status is None:
+                if res["decision"] == "BLOCK":
+                    current_status = "HALTED"
+                else:
+                    current_status = "AUTO_APPROVED"
+                st.session_state.tx_states[tx.tx_id] = current_status
+                
+            # Badge formatting based on active status state
+            if current_status == "HALTED":
+                status_label = "❌ HALTED & ESCROWED (Awaiting Review)"
+                status_color = "#ef4444"
+                status_bg = "rgba(239, 68, 68, 0.15)"
+            elif current_status == "RELEASED":
+                status_label = "✅ RELEASED BY COMPLIANCE AUDITOR"
+                status_color = "#22c55e"
+                status_bg = "rgba(34, 197, 94, 0.15)"
+            elif current_status == "SEIZED":
+                status_label = "🚫 FUNDS PERMANENTLY SEIZED & FROZEN"
+                status_color = "#94a3b8"
+                status_bg = "rgba(148, 163, 184, 0.15)"
+            else:
+                status_label = "✅ AUTO-APPROVED"
+                status_color = "#22c55e"
+                status_bg = "rgba(34, 197, 94, 0.15)"
             
             # Tier formatting
             if res["tier"] == 1:
-                tier_badge = "⚡ Tier 1 (Deterministic Rules)"
+                tier_badge = "⚡ Tier 1 (Rules)"
                 tier_color = "#60a5fa"
                 tier_bg = "rgba(96, 165, 250, 0.15)"
             else:
-                tier_badge = "🤖 Tier 2 (AI Cognitive Escalate)"
+                tier_badge = "🤖 Tier 2 (AI Escalate)"
                 tier_color = "#f59e0b"
                 tier_bg = "rgba(245, 158, 11, 0.15)"
                 
@@ -358,14 +363,29 @@ with tab2:
                     </div>
                     <div style="margin-top: 5px;">
                         <span style="background-color: {tier_bg}; color: {tier_color}; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; border: 1px solid {tier_color}; margin-right: 12px;">{tier_badge}</span>
-                        <span style="background-color: {status_bg}; color: {status_color}; padding: 4px 16px; border-radius: 12px; font-size: 14px; font-weight: bold; border: 1px solid {status_color}; text-transform: uppercase;">{res['decision']}</span>
+                        <span style="background-color: {status_bg}; color: {status_color}; padding: 4px 16px; border-radius: 12px; font-size: 14px; font-weight: bold; border: 1px solid {status_color}; text-transform: uppercase;">{status_label}</span>
                     </div>
                 </div>
-                <div style="margin-top: 12px; font-size: 14.5px; color: #cbd5e1; border-top: 1px solid #334155; padding-top: 10px;">
+                <div style="margin-top: 12px; font-size: 14.5px; color: #cbd5e1; border-top: 1px solid #334155; padding-top: 10px; margin-bottom: 10px;">
                     <strong>Compliance Audit Narrative:</strong> {res['narrative']}
                 </div>
-            </div>
             """, unsafe_allow_html=True)
+            
+            # Action controls inside streamlit for halted transactions
+            if current_status == "HALTED":
+                btn_col1, btn_col2, _ = st.columns([1, 1, 2])
+                with btn_col1:
+                    # Unique key prevents widget ID collisions
+                    if st.button(f"Release Funds ({tx.tx_id})", key=f"rel_{tx.tx_id}"):
+                        st.session_state.tx_states[tx.tx_id] = "RELEASED"
+                        st.rerun()
+                with btn_col2:
+                    if st.button(f"Seize Funds ({tx.tx_id})", key=f"sz_{tx.tx_id}"):
+                        st.session_state.tx_states[tx.tx_id] = "SEIZED"
+                        st.rerun()
+            
+            # Close the HTML card container
+            st.markdown("</div>", unsafe_allow_html=True)
             
     except Exception as e:
         st.error(f"Error loading compliance engine: {e}")
