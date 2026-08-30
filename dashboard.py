@@ -71,7 +71,7 @@ st.markdown("""
         font-family: 'Outfit', 'Inter', sans-serif;
     }
 </style>
-""", unsafe_type=True)
+""", unsafe_allow_html=True)
 
 # Load LLM Config
 api_key = os.environ.get("GEMINI_API_KEY")
@@ -193,12 +193,12 @@ with tab1:
                 if decision == "BLOCK":
                     st.markdown(
                         '<div class="status-badge status-blocked">🚨 COMPLIANCE ALERT: ACTION REQUIRED (BLOCKED)</div>',
-                        unsafe_type=True
+                        unsafe_allow_html=True
                     )
                 else:
                     st.markdown(
                         '<div class="status-badge status-approved">✅ COMPLIANCE STATUS: CLEAN (APPROVED)</div>',
-                        unsafe_type=True
+                        unsafe_allow_html=True
                     )
                     
                 st.markdown("#### AI Auditor Narrative")
@@ -283,7 +283,7 @@ with tab1:
                         <p><strong>Strict Directive:</strong> Any fuzzy matching threshold below 90% strict name matching MUST require human-in-the-loop review.</p>
                     </div>
                     """,
-                    unsafe_type=True
+                    unsafe_allow_html=True
                 )
                 
                 # Human in the Loop Decision Center
@@ -365,7 +365,7 @@ with tab2:
                     <strong>Compliance Audit Narrative:</strong> {res['narrative']}
                 </div>
             </div>
-            """, unsafe_type=True)
+            """, unsafe_allow_html=True)
             
     except Exception as e:
         st.error(f"Error loading compliance engine: {e}")
