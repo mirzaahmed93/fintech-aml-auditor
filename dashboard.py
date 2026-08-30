@@ -4,6 +4,7 @@ import re
 import difflib
 import json
 import asyncio
+import time
 import google.generativeai as genai
 from dotenv import load_dotenv
 
@@ -70,6 +71,13 @@ st.markdown("""
         padding: 20px;
         margin-bottom: 16px;
     }
+    .retrain-banner {
+        background-color: rgba(59, 130, 246, 0.1);
+        border: 1px dashed #3b82f6;
+        padding: 18px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
     h1, h2, h3 {
         font-family: 'Outfit', 'Inter', sans-serif;
     }
@@ -134,6 +142,30 @@ st.title("🛡️ Fintech AML Compliance Auditor")
 st.subheader("Human-In-The-Loop (HITL) Regulatory Verification Portal")
 st.markdown("---")
 
+# Session State for model training state
+if "model_aligned" not in st.session_state:
+    st.session_state.model_aligned = False
+if "tx_states" not in st.session_state:
+    st.session_state.tx_states = {}
+
+# Sidebar: Select Active Policy Model
+st.sidebar.header("🤖 Active Policy Model")
+model_options = ["Baseline Model (Pre-RL)", "Aligned Model (Post-RL)"]
+default_idx = 1 if st.session_state.model_aligned else 0
+
+selected_policy = st.sidebar.selectbox(
+    "Select Active Policy",
+    model_options,
+    index=default_idx
+)
+active_policy_key = "baseline" if selected_policy == "Baseline Model (Pre-RL)" else "aligned"
+
+# Show visual status in sidebar
+if active_policy_key == "baseline":
+    st.sidebar.warning("⚠️ Running Unaligned Baseline. Expect false positives/negative escapes.")
+else:
+    st.sidebar.success("🚀 Running Compliance-Aligned Model. LoRA adapter active.")
+
 # Setup Tabs
 tab1, tab2 = st.tabs(["📁 Pull Request Audits", "💸 Live Transaction Stream"])
 
@@ -179,7 +211,7 @@ with tab1:
             threshold_match = re.search(r"THRESHOLD:(0\.\d+)", meta_text)
             threshold = float(threshold_match.group(1)) if threshold_match else 0.90
 
-            # Audit Simulation
+            # Audit Simulation (using selected policy)
             decision, narrative = generate_audit_report(pr_code, is_poisoned, threshold)
 
             # Main Dashboard Columns
@@ -281,41 +313,34 @@ with tab2:
         "High-fidelity transactions are auto-resolved. Suspected mismatches are **Halted & Escrowed** in real-time, "
         "requiring compliance officers to release or seize the funds."
     )
-    
-    # Initialize in-memory transaction states in st.session_state
-    if "tx_states" not in st.session_state:
-        st.session_state.tx_states = {}
 
     # Import Compliance Engine
     try:
-        from compliance_engine import ComplianceEngine, Transaction
+        from compliance_engine import ComplianceEngine, Transaction, generate_transaction_stream
         engine = ComplianceEngine()
         
-        # Define transaction stream
-        transactions = [
-            Transaction("TX-101", "John Doe", "John Doe", 1500.00),
-            Transaction("TX-102", "Xavier Holdings LLC", "Acme Corporation", 12000.00),
-            Transaction("TX-103", "Ahmed Mirza", "Ahmed A. Mirza", 450.00, "Spelling variation in banking records"),
-            Transaction("TX-104", "Goldman Trading Ltd", "Goldman Trading", 8500.00, "Corporate suffix abbreviation"),
-            Transaction("TX-105", "Apex Corp", "Summit Logistics", 150000.00, "Large third-party partner routing")
-        ]
+        # Scale transaction stream to 50 records
+        transactions = generate_transaction_stream(50)
         
-        # Async execution wrapper
+        # Async execution wrapper (runs current policy)
         async def run_audits():
-            tasks = [engine.audit_transaction(tx) for tx in transactions]
+            tasks = [engine.audit_transaction(tx, policy=active_policy_key) for tx in transactions]
             return await asyncio.gather(*tasks)
             
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         audit_results = loop.run_until_complete(run_audits())
         
-        # Initialize transaction states
+        # Sync states in session memory (only if not already set or if policy changed)
+        # We track states mapped to the active policy keys to demonstrate dynamic retraining
+        state_key_prefix = f"{active_policy_key}_"
         for tx, res in zip(transactions, audit_results):
-            if tx.tx_id not in st.session_state.tx_states:
+            unique_tx_key = state_key_prefix + tx.tx_id
+            if unique_tx_key not in st.session_state.tx_states:
                 if res["decision"] == "BLOCK":
-                    st.session_state.tx_states[tx.tx_id] = "HALTED"
+                    st.session_state.tx_states[unique_tx_key] = "HALTED"
                 else:
-                    st.session_state.tx_states[tx.tx_id] = "AUTO_APPROVED"
+                    st.session_state.tx_states[unique_tx_key] = "AUTO_APPROVED"
         
         # Compute Performance Metrics Live
         total_tx = len(transactions)
@@ -324,7 +349,8 @@ with tab2:
         
         correct_predictions = 0
         for tx, res in zip(transactions, audit_results):
-            status = st.session_state.tx_states[tx.tx_id]
+            unique_tx_key = state_key_prefix + tx.tx_id
+            status = st.session_state.tx_states[unique_tx_key]
             ai_decision = res["decision"]
             if ai_decision == "BLOCK" and status in ["HALTED", "SEIZED"]:
                 correct_predictions += 1
@@ -334,7 +360,7 @@ with tab2:
         
         active_escrow = sum(
             tx.amount for tx in transactions 
-            if st.session_state.tx_states[tx.tx_id] in ["HALTED", "SEIZED"]
+            if st.session_state.tx_states[state_key_prefix + tx.tx_id] in ["HALTED", "SEIZED"]
         )
         
         # Display Metrics Dashboard Row
@@ -349,11 +375,49 @@ with tab2:
             st.metric(label="Escrowed Capital", value=f"${active_escrow:,.2f}")
             
         st.markdown("---")
+        
+        # INTERACTIVE TRAINING SECTION (Only visible on Baseline where overrides exist)
+        overrides_count = sum(
+            1 for tx in transactions 
+            if st.session_state.tx_states.get(state_key_prefix + tx.tx_id) in ["RELEASED", "SEIZED"]
+        )
+        
+        if active_policy_key == "baseline" and overrides_count > 0:
+            st.markdown(f"""
+            <div class="retrain-banner">
+                <h4 style="color: #3b82f6; margin-top: 0; margin-bottom: 8px;">⚡ Human-Feedback Training Loop Ready</h4>
+                <p style="margin: 0; color: #cbd5e1; font-size: 14.5px;">
+                    You have corrected <strong>{overrides_count}</strong> transaction audits. You can run an incremental 
+                    Reinforcement Learning (GRPO) training cycle to tune the model's policy weights directly on your feedback.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("⚡ Fine-Tune Auditor Model on Overrides"):
+                progress_bar = st.progress(0)
+                for percent in range(1, 101):
+                    time.sleep(0.015)  # Simulate model update steps
+                    progress_bar.progress(percent)
+                st.success("🎉 LoRA weights updated successfully! Policy aligned with human compliance overrides.")
+                st.session_state.model_aligned = True
+                st.session_state.tx_states.clear() # Clear memory states to reload under aligned rules
+                time.sleep(1.0)
+                st.rerun()
+                
+        elif st.session_state.model_aligned and active_policy_key == "aligned":
+            st.success("🌟 Compliance-Aligned Model Active. Notice that false alarms have been resolved automatically by the trained weights!")
+            
+            if st.button("Reset Simulation"):
+                st.session_state.model_aligned = False
+                st.session_state.tx_states.clear()
+                st.rerun()
+
         st.markdown("### Active Transaction Ledger")
         
         # Grid rendering
         for tx, res in zip(transactions, audit_results):
-            current_status = st.session_state.tx_states[tx.tx_id]
+            unique_tx_key = state_key_prefix + tx.tx_id
+            current_status = st.session_state.tx_states[unique_tx_key]
                 
             # Badge formatting based on active status state
             if current_status == "HALTED":
@@ -409,11 +473,11 @@ with tab2:
                 btn_col1, btn_col2, _ = st.columns([1, 1, 2])
                 with btn_col1:
                     if st.button(f"Release Funds ({tx.tx_id})", key=f"rel_{tx.tx_id}"):
-                        st.session_state.tx_states[tx.tx_id] = "RELEASED"
+                        st.session_state.tx_states[unique_tx_key] = "RELEASED"
                         st.rerun()
                 with btn_col2:
                     if st.button(f"Seize Funds ({tx.tx_id})", key=f"sz_{tx.tx_id}"):
-                        st.session_state.tx_states[tx.tx_id] = "SEIZED"
+                        st.session_state.tx_states[unique_tx_key] = "SEIZED"
                         st.rerun()
             
             # Expandable Details Panel for Raw Data and Deep Reasoning
