@@ -309,18 +309,51 @@ with tab2:
         asyncio.set_event_loop(loop)
         audit_results = loop.run_until_complete(run_audits())
         
+        # Initialize transaction states
+        for tx, res in zip(transactions, audit_results):
+            if tx.tx_id not in st.session_state.tx_states:
+                if res["decision"] == "BLOCK":
+                    st.session_state.tx_states[tx.tx_id] = "HALTED"
+                else:
+                    st.session_state.tx_states[tx.tx_id] = "AUTO_APPROVED"
+        
+        # Compute Performance Metrics Live
+        total_tx = len(transactions)
+        tier1_resolved = sum(1 for res in audit_results if res["tier"] == 1)
+        auto_routing_rate = (tier1_resolved / total_tx) * 100.0
+        
+        correct_predictions = 0
+        for tx, res in zip(transactions, audit_results):
+            status = st.session_state.tx_states[tx.tx_id]
+            ai_decision = res["decision"]
+            if ai_decision == "BLOCK" and status in ["HALTED", "SEIZED"]:
+                correct_predictions += 1
+            elif ai_decision == "APPROVE" and status in ["AUTO_APPROVED", "RELEASED"]:
+                correct_predictions += 1
+        ai_accuracy = (correct_predictions / total_tx) * 100.0
+        
+        active_escrow = sum(
+            tx.amount for tx in transactions 
+            if st.session_state.tx_states[tx.tx_id] in ["HALTED", "SEIZED"]
+        )
+        
+        # Display Metrics Dashboard Row
+        met_col1, met_col2, met_col3, met_col4 = st.columns(4)
+        with met_col1:
+            st.metric(label="Transactions Screened", value=total_tx)
+        with met_col2:
+            st.metric(label="Auto-Routing Rate (Tier 1)", value=f"{auto_routing_rate:.1f}%")
+        with met_col3:
+            st.metric(label="AI Auditor Accuracy", value=f"{ai_accuracy:.1f}%")
+        with met_col4:
+            st.metric(label="Escrowed Capital", value=f"${active_escrow:,.2f}")
+            
+        st.markdown("---")
         st.markdown("### Active Transaction Ledger")
         
         # Grid rendering
         for tx, res in zip(transactions, audit_results):
-            # Resolve current HITL state
-            current_status = st.session_state.tx_states.get(tx.tx_id)
-            if current_status is None:
-                if res["decision"] == "BLOCK":
-                    current_status = "HALTED"
-                else:
-                    current_status = "AUTO_APPROVED"
-                st.session_state.tx_states[tx.tx_id] = current_status
+            current_status = st.session_state.tx_states[tx.tx_id]
                 
             # Badge formatting based on active status state
             if current_status == "HALTED":
