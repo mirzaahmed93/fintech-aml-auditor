@@ -10,3 +10,5 @@ synthetic_prs/
 
 # OS specific files
 .DS_Store
+.env
+
