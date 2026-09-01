@@ -1,6 +1,6 @@
 # Fintech AML Compliance Auditor
 
-An automated, reinforcement-learning-powered Pull Request (PR) compliance auditor and transaction screening engine. This system audits codebase modifications for Anti-Money Laundering (AML) compliance violations by fusing regulatory documentation into a codebase knowledge graph, utilizing adversarial co-training (self-play), and providing a human-in-the-loop compliance dashboard.
+An automated, reinforcement-learning-powered Pull Request (PR) compliance auditor and transaction screening engine. This system audits codebase modifications for Anti-Money Laundering (AML) compliance violations by combining regulatory documentation into a codebase knowledge graph, utilising adversarial co-training, and providing a human-in-the-loop compliance dashboard.
 
 ---
 
@@ -8,8 +8,8 @@ An automated, reinforcement-learning-powered Pull Request (PR) compliance audito
 
 In modern fintech, minor modifications to transaction matching thresholds can bypass security controls and facilitate trade-based money laundering (TBML) or fraudulent activities. This auditor is designed to:
 1. **Bridge the gap between regulatory requirements and source code** using semantic knowledge graphs.
-2. **Train a specialized AI compliance auditor (Blue Team)** using **Group Relative Policy Optimization (GRPO)**.
-3. **Harden the auditor using self-play** by training a **Rogue Developer (Red Team)** that attempts to inject hidden compliance bypasses in name matching or threshold algorithms.
+2. **Train a specialised AI compliance auditor (Blue Team)** using **Group Relative Policy Optimization (GRPO)**.
+3. **Harden the auditor using self-play** by training a **Rogue Developer (Red Team)** that attempts to inject hidden compliance bypasses in name matching or threshold algorithms improving model accuracy.
 4. **Empower Human Compliance Officers** to monitor transaction streams, review raw payloads, and actively train the AI through a visual dashboard.
 
 ---
@@ -19,9 +19,9 @@ In modern fintech, minor modifications to transaction matching thresholds can by
 This system combines modern reinforcement learning and efficient fine-tuning to train an expert compliance model:
 
 * **Base Model (Qwen-9B)**: Acts as the foundation model for understanding code logic, parsing text, and reasoning about financial flows.
-* **LoRA (Low-Rank Adaptation)**: Rather than retraining billions of weights in the base model, the base model is frozen. We train a lightweight adapter layer (a tiny fraction of the model size, ~20MB-50MB) containing compliance-specific knowledge. This reduces training compute requirements by over 98% while achieving high accuracy.
-* **GRPO (Group Relative Policy Optimization)**: Instead of requiring an expensive helper "critic" model, GRPO generates a group of draft reviews for each code change, scores them against FinCEN CDD compliance rules, and adjusts the model based on relative draft quality.
-* **Knowledge Graph (Graphify)**: Extracts structural relationships from code ASTs and regulatory guidelines (such as FinCEN 31 CFR 1010.230) so the model can cite exact legal rules when auditing code.
+* **LoRA (Low-Rank Adaptation)**: Rather than retraining billions of weights in the base model, the base model is frozen. A lightweight adapter layer is trained(a tiny fraction of the model size of approx. 20MB-50MB) containing compliance-specific knowledge. This reduces training compute requirements by over 98% while achieving high accuracy.
+* **GRPO (Group Relative Policy Optimisation)**: Instead of requiring an expensive helper "critic" model, GRPO generates a group of draft reviews for each code change, scores them against FinCEN CDD compliance rules, and adjusts the model based on relative draft quality.
+* **Knowledge Graph (Graphify)**: Extracts structural relationships from code ASTs (abstract syntax trees_ and regulatory guidelines (FinCEN 31 CFR 1010.230) so the model can cite exact legal rules when auditing code.
 * **Continuous Feedback Loop**: When a human compliance officer overrides a flagged transaction in the dashboard, the decision is logged and can be used to run incremental fine-tuning epochs that align the model with human judgment.
 
 ---
@@ -58,7 +58,7 @@ The portal exposes two key operational areas:
 ### Tab 1: Pull Request Audits (Code Safety Review)
 * **Inbox**: Select from 50 synthetic PR changes generated during testing.
 * **AI Auditor Narrative**: Explains the AML compliance risk of the code change.
-* **Compliance Impact Card**: Summarizes the system modifications in a non-technical grid (e.g. comparing proposed threshold changes against the 90% FinCEN baseline) for regulators.
+* **Compliance Impact Card**: Summarises the system modifications in a non-technical grid (e.g. comparing proposed threshold changes against the 90% FinCEN baseline) for regulators.
 * **Decision Center**: Allows the compliance officer to manually confirm blocks or apply overrides.
 
 ### Tab 2: Live Transaction Stream and Halted Funds Escrow
