@@ -37,29 +37,41 @@ class ComplianceEngine:
         # Token sort ratio handles word ordering mismatches (e.g. "Ahmed Mirza" vs "Mirza Ahmed")
         return fuzz.token_sort_ratio(n1, n2) / 100.0
 
-    async def audit_transaction(self, tx: Transaction, policy="aligned"):
+    async def audit_transaction(self, tx: Transaction, policy="aligned", threshold=0.90):
         """
         Audits a transaction using a Tiered approach.
-        - Tier 1: Match Score >= 0.90 -> Auto-Approve.
-        - Tier 1: Match Score < 0.70 -> Auto-Block.
-        - Tier 2: 0.70 <= Match Score < 0.90 -> Escalate to LLM Auditor.
+        - Tier 1: Match Score >= threshold -> Auto-Approve.
+        - Tier 1: Match Score < min(0.70, threshold) -> Auto-Block.
+        - Tier 2: Escalate ambiguous cases to LLM Auditor.
         """
         score = self.calculate_match_score(tx.remitter, tx.customer)
         
         # TIER 1 Rules
-        if score >= 0.90:
+        if score >= threshold:
+            is_compromised_leak = (threshold < 0.90 and score < 0.90)
+            if is_compromised_leak:
+                narrative = (
+                    f"Tier 1 Compromised Approval: Match score ({score * 100:.1f}%) passed under the lowered "
+                    f"code threshold ({int(threshold * 100)}%), bypassing mandatory human review "
+                    f"under FinCEN CDD 31 CFR 1010.230."
+                )
+            else:
+                narrative = "Tier 1 Auto-Approve: High name matching similarity satisfies regulatory CDD requirements."
+                
             return {
                 "decision": "APPROVE",
                 "tier": 1,
                 "score": score,
-                "narrative": "Tier 1 Auto-Approve: High name matching similarity satisfies the regulatory CDD requirements."
+                "narrative": narrative,
+                "is_leak": is_compromised_leak
             }
-        elif score < 0.70:
+        elif score < min(0.70, threshold):
             return {
                 "decision": "BLOCK",
                 "tier": 1,
                 "score": score,
-                "narrative": "Tier 1 Auto-Block: High mismatch risk identified. The originator (remitter) name does not match the invoiced customer."
+                "narrative": "Tier 1 Auto-Block: High mismatch risk identified. The originator (remitter) name does not match the invoiced customer.",
+                "is_leak": False
             }
             
         # TIER 2 Escalation (Cognitive LLM)
@@ -89,7 +101,8 @@ class ComplianceEngine:
                     "decision": decision,
                     "tier": 2,
                     "score": score,
-                    "narrative": narrative
+                    "narrative": narrative,
+                    "is_leak": False
                 }
             except Exception as e:
                 # Fallback on API errors
@@ -132,7 +145,8 @@ class ComplianceEngine:
             "decision": decision,
             "tier": 2,
             "score": score,
-            "narrative": narrative
+            "narrative": narrative,
+            "is_leak": False
         }
 
 def generate_transaction_stream(count=50):
