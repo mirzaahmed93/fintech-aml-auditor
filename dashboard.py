@@ -172,7 +172,7 @@ st.sidebar.header("Active Pull Request")
 
 prs_dir = "synthetic_prs"
 selected_id = "0"
-selected_file = "pr_0_matcher_agent.py"
+selected_file = None
 selected_threshold = 0.90
 is_poisoned = False
 
@@ -211,6 +211,8 @@ tab1, tab2 = st.tabs(["Pull Request Audits", "Live Transaction Stream"])
 with tab1:
     if not os.path.exists(prs_dir):
         st.error(f"Please run `python3 generate_poisoned_prs.py` first to generate mock PRs in '{prs_dir}/'.")
+    elif selected_file is None:
+        st.error(f"No PR files available to audit. Please run `python3 generate_poisoned_prs.py` to generate mock PRs in '{prs_dir}/'.")
     else:
         # Load Baseline vs PR Code
         baseline_path = "src/matcher_agent.py"
@@ -567,7 +569,7 @@ with tab2:
                     # Governing Law Checklist
                     st.markdown("**Compliance Checklist Metrics:**")
                     if score >= selected_threshold:
-                        st.markdown(f"Passed Active Code Threshold (`>{int(selected_threshold * 100)}% Match`)")
+                        st.markdown(f"Passed Active Code Threshold (`≥{selected_threshold:.2%} Match`)")
                     else:
                         st.markdown(f"Failed Active Code Threshold (`<{int(selected_threshold * 100)}% Match`)")
                         

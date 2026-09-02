@@ -52,7 +52,7 @@ class ComplianceEngine:
             if is_compromised_leak:
                 narrative = (
                     f"Tier 1 Compromised Approval: Match score ({score * 100:.1f}%) passed under the lowered "
-                    f"code threshold ({int(threshold * 100)}%), bypassing mandatory human review "
+                    f"code threshold ({threshold:.2%}), bypassing mandatory human review "
                     f"under FinCEN CDD 31 CFR 1010.230."
                 )
             else:
