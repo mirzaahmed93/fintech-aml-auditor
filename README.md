@@ -79,7 +79,7 @@ The portal exposes two key operational areas:
 
 ### Tab 1: Pull Request Audits (Code Safety Review)
 * **Inbox**: Select from 50 synthetic PR changes generated during testing.
-* **AI Auditor Narrative**: Explains the AML compliance risk of the code change.
+* **AI Auditor Narrative**: Explains the AML compliance risk of the code change, citing FinCEN Advisory FIN-2010-A001 on Trade-Based Money Laundering (TBML) and CDD rule 31 CFR 1010.230.
 * **Compliance Impact Card**: Summarises the system modifications in a non-technical grid (e.g. comparing proposed threshold changes against the 90% FinCEN baseline) for regulators.
 * **Decision Centre**: Allows the compliance officer to manually confirm blocks or apply overrides.
 
@@ -92,9 +92,18 @@ The portal exposes two key operational areas:
   * **Composite AML Risk Index Formula**:
     $$\text{Composite Risk} = 0.50 \times (1 - \text{Identity Score}) + 0.30 \times \text{Structuring Risk} + 0.20 \times \text{Jurisdiction Risk}$$
   * **Weighting Justification & Evidentiary Grounding**:
-    * **Identity Discrepancy (50% — Statutory Foundation)**: Under FinCEN CDD (31 CFR 1010.230), establishing beneficial ownership is the primary legal obligation in clearing settlement. An unverified third-party entity paying on behalf of a client constitutes an immediate money-laundering predicate; hence, a complete mismatch ($1.0 \times 0.50 = 0.50$) prevents any third-party payment from receiving a clean rating.
+    * **Identity Discrepancy (50% — Statutory Foundation)**: Under FinCEN Advisory FIN-2010-A001 and CDD (31 CFR 1010.230), establishing beneficial ownership is the primary legal obligation in clearing settlement. An unverified third-party entity paying on behalf of a client constitutes an immediate money-laundering predicate; hence, a complete mismatch ($1.0 \times 0.50 = 0.50$) prevents any third-party payment from receiving a clean rating.
     * **Structuring Risk (30% — Criminal Intent Indicator)**: Under the Bank Secrecy Act (31 U.S.C. 5324), intentionally pitching payments into the $8,500 to $9,999 corridor to evade mandatory $10,000 CTR filings demonstrates deliberate criminal intent. A 30% weighting ensures active structuring decisively escalates borderline cases into mandatory review.
     * **Jurisdictional Exposure (20% — Contextual Risk Enhancer)**: Under FATF Recommendation 19, operating via offshore financial centres (e.g. Cayman Islands, BVI) requires Enhanced Due Diligence (EDD), not automatic prohibition, as legitimate global entities routinely use tax-neutral regimes. A calibrated 20% weighting avoids penalising legitimate commerce whilst acting as a force multiplier when paired with name discrepancies.
+  * **Vector Risk Classification Thresholds & Severity Calibration**:
+    Each forensic vector and the resulting composite score are categorised into defined risk tiers:
+
+    | Vector / Metric | LOW RISK Tier | MEDIUM RISK Tier | HIGH / CRITICAL RISK Tier | Operational Action |
+    | :--- | :--- | :--- | :--- | :--- |
+    | **Vector 1: Identity Similarity** | $\ge 90.0\%$ (Verified client match or approved legal suffix) | $70.0\% - 89.9\%$ (Minor spelling variation or entity ambiguity) | $< 70.0\%$ (Unrelated third-party remitter) | Mismatch flagged under FinCEN Advisory FIN-2010-A001; requires manual review. |
+    | **Vector 2: Structuring Index** | $< 0.35$ (Normal commercial transaction volume) | $0.35 - 0.69$ (Approaching threshold: $7,000–$8,499) | $\ge 0.70$ (Active $8,500–$9,999 CTR avoidance band) | Flagged under 31 U.S.C. 5324; overrides auto-approval. |
+    | **Vector 3: Jurisdictional Risk** | $< 0.35$ (Domestic clearing: US, GB, DE, CA) | $0.35 - 0.59$ (Intermediate preferential regime: MT, GI, LU) | $\ge 0.60$ (Offshore secrecy haven: KY, VG, PA, SC, AE) | Enhanced Due Diligence (EDD) triggered under FATF Recommendation 19. |
+    | **Composite AML Risk Index** | $< 0.25$ (`LOW RISK`) | $0.25 - 0.44$ (`MEDIUM RISK`) | $0.45 - 0.69$ (`HIGH`), $\ge 0.70$ (`CRITICAL`) | High/Critical triggers mandatory escrow hold & FinCEN Form 111 SAR dossier. |
 * **Automated FinCEN SAR (Form 111) Generator**: Compliance officers can click **`Generate FinCEN SAR`** on any flagged or leaked transaction to produce an official, legally structured Suspicious Activity Report dossier with one-click export for law enforcement submission.
 * **Collapsible Details (Raw and Reasoning)**: Allows inspectors to expand any transaction card to view:
   * **Raw JSON Payload**: Complete transaction structure (banking records, accounts, clearing routes, multi-vector forensics).

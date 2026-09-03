@@ -92,6 +92,34 @@ class ComplianceEngine:
             
         return composite, level
 
+    @staticmethod
+    def classify_vector_score(score: float, vector_type: str) -> str:
+        """
+        Classifies individual forensic vector scores into LOW, MEDIUM, or HIGH risk tiers:
+        - identity: >=0.90 LOW, 0.70-0.89 MEDIUM, <0.70 HIGH
+        - structuring: >=0.70 HIGH, 0.35-0.69 MEDIUM, <0.35 LOW
+        - jurisdiction: >=0.60 HIGH, 0.35-0.59 MEDIUM, <0.35 LOW
+        """
+        if vector_type == "identity":
+            if score >= 0.90:
+                return "LOW"
+            elif score >= 0.70:
+                return "MEDIUM"
+            return "HIGH"
+        elif vector_type == "structuring":
+            if score >= 0.70:
+                return "HIGH"
+            elif score >= 0.35:
+                return "MEDIUM"
+            return "LOW"
+        elif vector_type == "jurisdiction":
+            if score >= 0.60:
+                return "HIGH"
+            elif score >= 0.35:
+                return "MEDIUM"
+            return "LOW"
+        return "LOW"
+
     async def audit_transaction(self, tx: Transaction, policy="aligned", threshold=0.90):
         """
         Audits a transaction using a Multi-Vector Tiered approach.
@@ -105,6 +133,10 @@ class ComplianceEngine:
         jurisdiction_risk = self.calculate_jurisdiction_risk(country)
         composite_risk, risk_level = self.calculate_composite_risk(score, structuring_risk, jurisdiction_risk)
         
+        id_class = self.classify_vector_score(score, "identity")
+        struct_class = self.classify_vector_score(structuring_risk, "structuring")
+        geo_class = self.classify_vector_score(jurisdiction_risk, "jurisdiction")
+        
         graph_traversal = self.knowledge_graph.get_compliance_traversal()
         
         has_multi_vector_red_flag = (structuring_risk > 0.60 or jurisdiction_risk > 0.60)
@@ -117,7 +149,7 @@ class ComplianceEngine:
                 narrative = (
                     f"Tier 1 Compromised Approval: Match score ({score * 100:.1f}%) passed under the lowered "
                     f"code threshold ({threshold:.2%}), bypassing mandatory human review "
-                    f"under FinCEN CDD 31 CFR 1010.230."
+                    f"under FinCEN CDD 31 CFR 1010.230 and FinCEN Advisory FIN-2010-A001."
                 )
             else:
                 narrative = "Tier 1 Auto-Approve: High name matching similarity and clean multi-vector risk profile satisfy regulatory CDD requirements."
@@ -126,8 +158,11 @@ class ComplianceEngine:
                 "decision": "APPROVE",
                 "tier": 1,
                 "score": score,
+                "identity_class": id_class,
                 "structuring_risk": structuring_risk,
+                "structuring_class": struct_class,
                 "jurisdiction_risk": jurisdiction_risk,
+                "jurisdiction_class": geo_class,
                 "composite_risk": composite_risk,
                 "risk_level": risk_level,
                 "origin_country": country,
@@ -141,12 +176,15 @@ class ComplianceEngine:
                 "decision": "BLOCK",
                 "tier": 1,
                 "score": score,
+                "identity_class": id_class,
                 "structuring_risk": structuring_risk,
+                "structuring_class": struct_class,
                 "jurisdiction_risk": jurisdiction_risk,
+                "jurisdiction_class": geo_class,
                 "composite_risk": composite_risk,
                 "risk_level": risk_level,
                 "origin_country": country,
-                "narrative": "Tier 1 Auto-Block: High mismatch risk identified. The originator (remitter) name does not match the invoiced customer.",
+                "narrative": "Tier 1 Auto-Block: High mismatch risk identified. The originator (remitter) name does not match the invoiced customer under FinCEN Advisory FIN-2010-A001.",
                 "is_leak": False,
                 "graph_path": graph_traversal["formatted_path"],
                 "graph_hops": graph_traversal["hops"]
@@ -156,22 +194,23 @@ class ComplianceEngine:
         graph_context = self.knowledge_graph.get_prompt_context()
         prompt_text = (
             "You are a Fintech AML Compliance Auditor. Evaluate the following transaction under the FinCEN "
-            "Customer Due Diligence (CDD) Final Rule (31 CFR § 1010.230 concerning Third-Party Payment Risk) "
-            "and Bank Secrecy Act anti-structuring provisions (31 U.S.C. § 5324).\n\n"
+            "Customer Due Diligence (CDD) Final Rule (31 CFR § 1010.230 concerning Third-Party Payment Risk), "
+            "FinCEN Advisory FIN-2010-A001 on Trade-Based Money Laundering (TBML), and "
+            "Bank Secrecy Act anti-structuring provisions (31 U.S.C. § 5324).\n\n"
             f"{graph_context}\n\n"
             f"Transaction ID: {tx.tx_id}\n"
             f"Remitter (Bank Statement): {tx.remitter}\n"
             f"Customer (Invoice): {tx.customer}\n"
             f"Settlement Amount: ${tx.amount:,.2f} USD\n"
             f"Originating Country: {country}\n"
-            f"Fuzzy Match Score: {score * 100:.1f}%\n"
-            f"Structuring Risk Index: {structuring_risk:.2f} / 1.00\n"
-            f"Jurisdictional Risk Index: {jurisdiction_risk:.2f} / 1.00\n"
+            f"Fuzzy Match Score: {score * 100:.1f}% ({id_class} RISK)\n"
+            f"Structuring Risk Index: {structuring_risk:.2f} / 1.00 ({struct_class} RISK)\n"
+            f"Jurisdictional Risk Index: {jurisdiction_risk:.2f} / 1.00 ({geo_class} RISK)\n"
             f"Composite Risk Score: {composite_risk:.2f} / 1.00 ({risk_level} RISK)\n"
             f"Context Details: {tx.details}\n\n"
             "Evaluate if this represents a safe abbreviation, spelling variant, an illicit third-party shell payment, "
-            "or CTR structuring evasion. Respond in a concise paragraph explaining the AML risk, citing 31 CFR § 1010.230 "
-            "and the retrieved knowledge graph traversal. Conclude with 'BLOCK' or 'APPROVE'."
+            "or CTR structuring evasion. Respond in a concise paragraph explaining the AML risk, citing FinCEN Advisory FIN-2010-A001, "
+            "31 CFR § 1010.230, and the retrieved knowledge graph traversal. Conclude with 'BLOCK' or 'APPROVE'."
         )
         
         if self.model and policy == "aligned":
@@ -187,8 +226,11 @@ class ComplianceEngine:
                     "decision": decision,
                     "tier": 2,
                     "score": score,
+                    "identity_class": id_class,
                     "structuring_risk": structuring_risk,
+                    "structuring_class": struct_class,
                     "jurisdiction_risk": jurisdiction_risk,
+                    "jurisdiction_class": geo_class,
                     "composite_risk": composite_risk,
                     "risk_level": risk_level,
                     "origin_country": country,
@@ -208,6 +250,9 @@ class ComplianceEngine:
             graph_traversal = self.knowledge_graph.get_compliance_traversal()
             
         country = getattr(tx, "origin_country", "US")
+        id_class = self.classify_vector_score(score, "identity")
+        struct_class = self.classify_vector_score(structuring_risk, "structuring")
+        geo_class = self.classify_vector_score(jurisdiction_risk, "jurisdiction")
         
         if policy == "baseline":
             # Baseline unaligned model misses suffix variations and blocks them blindly
@@ -235,7 +280,7 @@ class ComplianceEngine:
             decision = "BLOCK"
             narrative = (
                 f"Tier 2 Escalation (Geographic Alert): Wire originated from high-risk secrecy haven ({country}) "
-                f"for remitter '{tx.remitter}'. Failed FATF Recommendation 19 enhanced due diligence and FinCEN CDD (31 CFR § 1010.230). "
+                f"for remitter '{tx.remitter}'. Failed FATF Recommendation 19 enhanced due diligence and FinCEN Advisory FIN-2010-A001. "
                 f"Escalated via knowledge graph traversal ({graph_traversal['formatted_path']}). Decision: BLOCK."
             )
         elif is_safe_abbreviation:
@@ -244,24 +289,27 @@ class ComplianceEngine:
                 f"Tier 2 Escalation (Gemini Fallback): Evaluated names '{tx.remitter}' and '{tx.customer}' "
                 f"via knowledge graph traversal ({graph_traversal['formatted_path']}). "
                 f"The mismatch is determined to be a safe legal suffix variation ('Corp' vs 'Corporation') originating from {country}. "
-                f"This does not represent a third-party payment risk under 31 CFR § 1010.230. Decision: APPROVE."
+                f"This does not represent a third-party payment risk under FinCEN Advisory FIN-2010-A001 or 31 CFR § 1010.230. Decision: APPROVE."
             )
         else:
             decision = "BLOCK"
             narrative = (
                 f"Tier 2 Escalation (Gemini Fallback): Evaluated names '{tx.remitter}' and '{tx.customer}' "
                 f"via knowledge graph traversal ({graph_traversal['formatted_path']}). "
-                f"The mismatch indicates different entities (Third-Party Payment). This violates the FinCEN CDD "
-                f"regulation (31 CFR § 1010.230) by auto-reconciling payments from a third-party company "
-                f"without manual review, facilitating potential money laundering. Decision: BLOCK."
+                f"The mismatch indicates different entities (Third-Party Payment). This violates FinCEN Advisory FIN-2010-A001 and "
+                f"CDD regulation (31 CFR § 1010.230) by auto-reconciling payments from an unrelated third-party entity "
+                f"without manual review, facilitating potential Trade-Based Money Laundering. Decision: BLOCK."
             )
             
         return {
             "decision": decision,
             "tier": 2,
             "score": score,
+            "identity_class": id_class,
             "structuring_risk": structuring_risk,
+            "structuring_class": struct_class,
             "jurisdiction_risk": jurisdiction_risk,
+            "jurisdiction_class": geo_class,
             "composite_risk": composite_risk,
             "risk_level": risk_level,
             "origin_country": country,

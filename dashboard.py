@@ -281,10 +281,12 @@ with tab1:
             
             # Regulatory Citation Lookup
             cits_found = []
+            if "FIN-2010-A001" in narrative or "FIN 2010 A001" in narrative:
+                cits_found.append("FinCEN Advisory FIN-2010-A001")
             if "31 CFR" in narrative or "1010.230" in narrative:
                 cits_found.append("31 CFR 1010.230")
             if "Third-Party" in narrative or "Third Party" in narrative:
-                cits_found.append("Third-Party Payment Risk")
+                cits_found.append("Third-Party Payment Risk (TBML)")
                 
             if cits_found:
                 st.success(f"Citations detected: {', '.join(cits_found)}")
@@ -296,9 +298,9 @@ with tab1:
             st.markdown(
                 f"""
                 <div class="regulation-card">
-                    <h4>FinCEN Customer Due Diligence (CDD) Final Rule</h4>
-                    <p><strong>Section: Third-Party Payment Risk (31 CFR 1010.230)</strong></p>
-                    <p><em>"Automated payment reconciliation systems must verify that the originator of a wire transfer (bank remitter) matches the invoiced entity. Auto-reconciling mismatched names without manual review facilitates Trade-Based Money Laundering (TBML) via third-party shell companies."</em></p>
+                    <h4>FinCEN Advisory FIN-2010-A001 & CDD Rule</h4>
+                    <p><strong>Section: Trade-Based Money Laundering (TBML) & Third-Party Payment Risk (31 CFR 1010.230)</strong></p>
+                    <p><em>"According to FinCEN Advisory FIN-2010-A001, a primary red flag for Trade-Based Money Laundering (TBML) includes transactions where third-party payments for goods or services are made by an intermediary apparently unrelated to the transaction. Automated reconciliation systems must be configured to flag these discrepancies for manual review rather than permitting unreviewed auto-matching."</em></p>
                     <p><strong>Strict Directive:</strong> Any fuzzy matching threshold below 90% strict name matching MUST require human-in-the-loop review.</p>
                 </div>
                 """,
@@ -650,12 +652,16 @@ with tab2:
                         
                         # Compute match metrics
                         score = res["score"]
-                        st.markdown(f"**Vector 1 (Identity Similarity):** `{score * 100:.1f}%` match")
+                        id_class = res.get("identity_class", "LOW")
+                        struct_class = res.get("structuring_class", "LOW")
+                        geo_class = res.get("jurisdiction_class", "LOW")
+                        
+                        st.markdown(f"**Vector 1 (Identity Similarity):** `{score * 100:.1f}%` match `[{id_class} RISK]`")
                         struct_note = "(CTR Threshold Avoidance Corridor $8.5K-$10K)" if struct_risk > 0.60 else "(Standard Amount)"
-                        st.markdown(f"**Vector 2 (Structuring Index):** `{struct_risk:.2f} / 1.00` {struct_note}")
+                        st.markdown(f"**Vector 2 (Structuring Index):** `{struct_risk:.2f} / 1.00` `[{struct_class} RISK]` {struct_note}")
                         geo_note = "(FATF Rec. 19 Secrecy Jurisdiction Multiplier)" if geo_risk > 0.60 else "(Domestic Clearing)"
-                        st.markdown(f"**Vector 3 (Geographic Risk):** `{origin_country}` - `{geo_risk:.2f} / 1.00` {geo_note}")
-                        st.markdown(f"**Composite AML Risk Index:** `{comp_score:.2f} / 1.00` ({risk_level} RISK)")
+                        st.markdown(f"**Vector 3 (Geographic Risk):** `{origin_country}` - `{geo_risk:.2f} / 1.00` `[{geo_class} RISK]` {geo_note}")
+                        st.markdown(f"**Composite AML Risk Index:** `{comp_score:.2f} / 1.00` `[{risk_level} RISK]`")
                         
                         # Governing Law Checklist
                         st.markdown("**Compliance Checklist Metrics:**")
