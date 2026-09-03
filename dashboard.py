@@ -283,8 +283,14 @@ with tab1:
             cits_found = []
             if "FIN-2010-A001" in narrative or "FIN 2010 A001" in narrative:
                 cits_found.append("FinCEN Advisory FIN-2010-A001")
-            if "31 CFR" in narrative or "1010.230" in narrative:
-                cits_found.append("31 CFR 1010.230")
+            if "1010.210" in narrative:
+                cits_found.append("31 CFR 1010.210 (AML Programme)")
+            if "1010.100" in narrative:
+                cits_found.append("31 CFR 1010.100(xx) (Structuring)")
+            if "5324" in narrative:
+                cits_found.append("31 U.S.C. 5324(a)(3)")
+            if "5318A" in narrative or "1010.610" in narrative or "FATF" in narrative:
+                cits_found.append("31 U.S.C. 5318A / FATF Rec. 19")
             if "Third-Party" in narrative or "Third Party" in narrative:
                 cits_found.append("Third-Party Payment Risk (TBML)")
                 
@@ -298,10 +304,10 @@ with tab1:
             st.markdown(
                 f"""
                 <div class="regulation-card">
-                    <h4>FinCEN Advisory FIN-2010-A001 & CDD Rule</h4>
-                    <p><strong>Section: Trade-Based Money Laundering (TBML) & Third-Party Payment Risk (31 CFR 1010.230)</strong></p>
-                    <p><em>"According to FinCEN Advisory FIN-2010-A001, a primary red flag for Trade-Based Money Laundering (TBML) includes transactions where third-party payments for goods or services are made by an intermediary apparently unrelated to the transaction. Automated reconciliation systems must be configured to flag these discrepancies for manual review rather than permitting unreviewed auto-matching."</em></p>
-                    <p><strong>Strict Directive:</strong> Any fuzzy matching threshold below 90% strict name matching MUST require human-in-the-loop review.</p>
+                    <h4>FinCEN Advisory FIN-2010-A001 & 31 CFR 1010.210</h4>
+                    <p><strong>Section: Trade-Based Money Laundering (TBML) & Third-Party Payment Risk</strong></p>
+                    <p><em>"In accordance with federal AML programme guidelines (31 CFR § 1010.210), the institution maintains ongoing transaction monitoring to identify activity indicative of Trade-Based Money Laundering (TBML). Per FinCEN Advisory FIN-2010-A001, third-party payments for goods or services executed by an intermediary apparently unrelated to the primary transaction constitute a material red flag requiring evaluation."</em></p>
+                    <p><strong>Internal Threshold Rule:</strong> To mitigate data discrepancies, the automated system routes any name-matching variance between wire originators and transaction counterparties falling below the institutionally established 90% fuzzy-match threshold to compliance personnel for manual human-in-the-loop review.</p>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -671,14 +677,14 @@ with tab2:
                             st.markdown(f"Failed Active Code Threshold (`<{int(selected_threshold * 100)}% Match`)")
                             
                         if score >= 0.90:
-                            st.markdown("Originator Identity Verified under FinCEN 90% Standard")
+                            st.markdown("Originator Identity Verified under Institutional 90% Threshold (31 CFR § 1010.210)")
                         else:
-                            st.markdown("Originator Name Mismatches FinCEN 90% Standard")
+                            st.markdown("Originator Mismatch Flagged under FinCEN Advisory FIN-2010-A001")
                             
                         if struct_risk > 0.60:
-                            st.markdown("Structuring Flag Active under 31 U.S.C. § 5324")
+                            st.markdown("Structuring Flag Active under 31 CFR § 1010.100(xx) & 31 U.S.C. § 5324(a)(3)")
                         else:
-                            st.markdown("No Structuring Behavior Detected")
+                            st.markdown("No Structuring Behaviour Detected")
                             
                         if tx.amount > 100000.00:
                             st.markdown("High-Value Settlement (> $100K High Risk Flag)")

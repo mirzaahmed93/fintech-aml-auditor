@@ -62,26 +62,26 @@ Transaction Context / Memo:     {tx.details}
 
 PART III - SUSPICIOUS ACTIVITY CLASSIFICATION (BSA / FinCEN CHECKLIST)
 --------------------------------------------------------------------------------
-{cdd_flag} FinCEN Advisory FIN-2010-A001 & 31 CFR 1010.230 - Third-Party Payment / TBML Risk
-{structuring_flag} 31 U.S.C. 5324 - Structuring to Evade Currency Transaction Reporting ($10K CTR Corridor)
-{jurisdiction_flag} FATF Recommendation 19 - Higher-Risk Jurisdiction / Offshore Secrecy Haven Exposure
+{cdd_flag} FinCEN Advisory FIN-2010-A001 & 31 CFR 1010.210 - Third-Party Payment / TBML Risk
+{structuring_flag} 31 CFR 1010.100(xx) & 31 U.S.C. 5324(a)(3) - Structuring to Evade Reporting ($10K CTR Corridor)
+{jurisdiction_flag} 31 U.S.C. 5318A, 31 CFR 1010.610 & FATF Rec. 19 - Higher-Risk Jurisdiction Exposure
 {leak_flag} Material Model Drift - Codebase Parameter Tampering / Bypassed Review Queue
 
 PART IV - MULTI-VECTOR RISK FORENSICS MATRIX
 --------------------------------------------------------------------------------
 1. Identity Vector (Name Matching):
    - Algorithm: RapidFuzz Levenshtein Token Sort Ratio
-   - Calculated Similarity: {score * 100:.1f}% [CLASSIFICATION: {identity_class}] (Regulatory Standard: >= 90.0%)
+   - Calculated Similarity: {score * 100:.1f}% [CLASSIFICATION: {identity_class}] (Institutional Standard: >= 90.0%)
    - Identity Risk Finding: {"MISMATCH - Third-party entity detected" if score < 0.90 else "MATCH - Name within acceptable variance"}
 
 2. Structuring Vector (Velocity & Amount Corridor):
    - CTR Proximity Index: {structuring_risk:.2f} / 1.00 [CLASSIFICATION: {structuring_class}]
-   - Structuring Assessment: {"ALERT: High structuring risk. Wire falls within $8,500-$9,999 CTR evasion band." if structuring_risk > 0.60 else "NORMAL: Settlement amount outside structuring band."}
+   - Structuring Assessment: {"ALERT: High structuring risk under 31 CFR 1010.100(xx). Wire falls within $8,500-$9,999 CTR evasion band." if structuring_risk > 0.60 else "NORMAL: Settlement amount outside structuring band."}
 
 3. Geographic Vector (Jurisdictional Exposure):
    - Originating Country: {origin_country}
    - Jurisdictional Risk Index: {jurisdiction_risk:.2f} / 1.00 [CLASSIFICATION: {jurisdiction_class}]
-   - Geographic Assessment: {"ELEVATED: High-risk secrecy haven or offshore financial center." if jurisdiction_risk > 0.60 else "STANDARD: Regulated domestic or equivalent jurisdiction."}
+   - Geographic Assessment: {"ELEVATED: High-risk secrecy haven or offshore financial center subject to EDD." if jurisdiction_risk > 0.60 else "STANDARD: Regulated domestic or equivalent jurisdiction."}
 
 4. Composite AML Risk Assessment:
    - Composite Risk Index: {composite_risk:.2f} / 1.00 [CLASSIFICATION: {risk_level} RISK]
@@ -91,7 +91,7 @@ PART V - KNOWLEDGE GRAPH AUDIT TRAIL
 --------------------------------------------------------------------------------
 Source Code Anchor:             src/matcher_agent.py (reconcile_payment)
 Knowledge Graph Traversal:      {graph_path}
-Regulatory Rule Mapped:         docs/fincen_bsa_manual.md -> FinCEN CDD Rule (31 CFR 1010.230) & FIN-2010-A001
+Regulatory Rule Mapped:         docs/fincen_bsa_manual.md -> Pillars 1-3 (FIN-2010-A001, 31 CFR 1010.210, 31 CFR 1010.100(xx), 31 U.S.C. 5318A)
 Graph Verification Status:      Verified Active (Confidence: 1.0, AST Grounded)
 
 PART VI - SUSPICIOUS ACTIVITY NARRATIVE
@@ -102,14 +102,14 @@ flagged transaction {tx.tx_id} in the gross settlement amount of ${tx.amount:,.2
 The wire transfer was initiated by '{tx.remitter}' purportedly to satisfy an outstanding
 commercial obligation for registered client '{tx.customer}'. Automated fuzzy string
 matching between the remitter and customer yielded a certainty of only {score * 100:.1f}%,
-failing the statutory 90.0% standard mandated under FinCEN Advisory FIN-2010-A001 and
-the Customer Due Diligence (CDD) Final Rule (31 CFR 1010.230).
+failing the institutionally established 90.0% standard mandated under FinCEN Advisory FIN-2010-A001 and
+AML programme requirements (31 CFR 1010.210).
 
 {"CRITICAL AUDIT NOTE: This transaction was auto-cleared as a COMPROMISED LEAK due to an unauthorized code modification lowering the matching threshold below 90%. Immediate code remediation and regulatory escrow quarantine have been enacted." if is_leak else "The transaction was immediately halted by the Compliance Engine and placed in escrow review."}
 
-{"ADDITIONAL STRUCTURING INDICATOR: The wire amount ($" + f"{tx.amount:,.2f}" + ") demonstrates intentional structuring characteristics under 31 U.S.C. 5324 designed to evade mandatory $10,000 Currency Transaction Reporting (CTR) thresholds." if structuring_risk > 0.60 else ""}
+{"ADDITIONAL STRUCTURING INDICATOR: The wire amount ($" + f"{tx.amount:,.2f}" + ") demonstrates intentional structuring characteristics under 31 CFR 1010.100(xx) and 31 U.S.C. 5324(a)(3) designed to evade mandatory $10,000 Currency Transaction Reporting (CTR) thresholds." if structuring_risk > 0.60 else ""}
 
-{"ADDITIONAL JURISDICTIONAL RISK: The wire originated from " + origin_country + ", a jurisdiction identified with heightened AML/CFT vulnerabilities and offshore secrecy protections under FATF Recommendation 19." if jurisdiction_risk > 0.60 else ""}
+{"ADDITIONAL JURISDICTIONAL RISK: The wire originated from " + origin_country + ", a jurisdiction subject to Enhanced Due Diligence (EDD) under 31 U.S.C. 5318A, 31 CFR 1010.610, and FATF Recommendation 19." if jurisdiction_risk > 0.60 else ""}
 
 Based on the multi-vector forensic evaluation and absence of documented corporate affiliation
 between the remitter and invoiced party, this activity is designated as potential Trade-Based

@@ -193,10 +193,10 @@ class ComplianceEngine:
         # TIER 2 Escalation (Cognitive LLM)
         graph_context = self.knowledge_graph.get_prompt_context()
         prompt_text = (
-            "You are a Fintech AML Compliance Auditor. Evaluate the following transaction under the FinCEN "
-            "Customer Due Diligence (CDD) Final Rule (31 CFR § 1010.230 concerning Third-Party Payment Risk), "
-            "FinCEN Advisory FIN-2010-A001 on Trade-Based Money Laundering (TBML), and "
-            "Bank Secrecy Act anti-structuring provisions (31 U.S.C. § 5324).\n\n"
+            "You are a Fintech AML Compliance Auditor. Evaluate the following transaction under:\n"
+            "1. Pillar 1: FinCEN Advisory FIN-2010-A001 on Trade-Based Money Laundering (TBML) and 31 CFR § 1010.210 (AML Programme Requirements);\n"
+            "2. Pillar 2: 31 CFR § 1010.100(xx) (Legal Definition of Structuring) and 31 U.S.C. § 5324(a)(3) (Structuring Prohibited);\n"
+            "3. Pillar 3: 31 U.S.C. § 5318A, 31 CFR § 1010.610, and FATF Recommendation 19 (Higher-Risk Jurisdictions).\n\n"
             f"{graph_context}\n\n"
             f"Transaction ID: {tx.tx_id}\n"
             f"Remitter (Bank Statement): {tx.remitter}\n"
@@ -210,7 +210,7 @@ class ComplianceEngine:
             f"Context Details: {tx.details}\n\n"
             "Evaluate if this represents a safe abbreviation, spelling variant, an illicit third-party shell payment, "
             "or CTR structuring evasion. Respond in a concise paragraph explaining the AML risk, citing FinCEN Advisory FIN-2010-A001, "
-            "31 CFR § 1010.230, and the retrieved knowledge graph traversal. Conclude with 'BLOCK' or 'APPROVE'."
+            "31 CFR § 1010.210, 31 CFR § 1010.100(xx), and the retrieved knowledge graph traversal. Conclude with 'BLOCK' or 'APPROVE'."
         )
         
         if self.model and policy == "aligned":
@@ -273,14 +273,14 @@ class ComplianceEngine:
             decision = "BLOCK"
             narrative = (
                 f"Tier 2 Escalation (Multi-Vector Alert): Evaluated transaction in amount of ${tx.amount:,.2f} from '{tx.remitter}'. "
-                f"Severe structuring characteristics detected under 31 U.S.C. § 5324 (CTR threshold evasion band). "
+                f"Severe structuring characteristics detected under 31 CFR § 1010.100(xx) and 31 U.S.C. § 5324(a)(3) (CTR evasion corridor). "
                 f"Escalated via knowledge graph traversal ({graph_traversal['formatted_path']}). Decision: BLOCK."
             )
         elif jurisdiction_risk > 0.60 and not is_safe_abbreviation:
             decision = "BLOCK"
             narrative = (
                 f"Tier 2 Escalation (Geographic Alert): Wire originated from high-risk secrecy haven ({country}) "
-                f"for remitter '{tx.remitter}'. Failed FATF Recommendation 19 enhanced due diligence and FinCEN Advisory FIN-2010-A001. "
+                f"for remitter '{tx.remitter}'. Failed FATF Recommendation 19 enhanced due diligence and 31 U.S.C. § 5318A / 31 CFR § 1010.610. "
                 f"Escalated via knowledge graph traversal ({graph_traversal['formatted_path']}). Decision: BLOCK."
             )
         elif is_safe_abbreviation:
@@ -289,7 +289,7 @@ class ComplianceEngine:
                 f"Tier 2 Escalation (Gemini Fallback): Evaluated names '{tx.remitter}' and '{tx.customer}' "
                 f"via knowledge graph traversal ({graph_traversal['formatted_path']}). "
                 f"The mismatch is determined to be a safe legal suffix variation ('Corp' vs 'Corporation') originating from {country}. "
-                f"This does not represent a third-party payment risk under FinCEN Advisory FIN-2010-A001 or 31 CFR § 1010.230. Decision: APPROVE."
+                f"This does not represent a third-party payment risk under FinCEN Advisory FIN-2010-A001 or 31 CFR § 1010.210. Decision: APPROVE."
             )
         else:
             decision = "BLOCK"
@@ -297,7 +297,7 @@ class ComplianceEngine:
                 f"Tier 2 Escalation (Gemini Fallback): Evaluated names '{tx.remitter}' and '{tx.customer}' "
                 f"via knowledge graph traversal ({graph_traversal['formatted_path']}). "
                 f"The mismatch indicates different entities (Third-Party Payment). This violates FinCEN Advisory FIN-2010-A001 and "
-                f"CDD regulation (31 CFR § 1010.230) by auto-reconciling payments from an unrelated third-party entity "
+                f"AML programme requirements (31 CFR § 1010.210) by auto-reconciling payments from an unrelated third-party intermediary "
                 f"without manual review, facilitating potential Trade-Based Money Laundering. Decision: BLOCK."
             )
             

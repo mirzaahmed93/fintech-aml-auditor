@@ -1,6 +1,16 @@
-# FinCEN Customer Due Diligence (CDD) Final Rule (31 CFR § 1010.230) & Advisory FIN-2010-A001
+# FinCEN & BSA Regulatory Compliance Manual
 
-## Third-Party Payment Risk & Trade-Based Money Laundering (TBML)
-According to FinCEN Advisory FIN-2010-A001, a primary red flag for Trade-Based Money Laundering (TBML) includes transactions where third-party payments for goods or services are made by an intermediary apparently unrelated to the transaction. Automated reconciliation systems must be configured to flag these discrepancies for manual review rather than permitting unreviewed auto-matching.
+## Pillar 1: Third-Party Payment Risk & Trade-Based Money Laundering (TBML)
+* **Authorities**: FinCEN Advisory FIN-2010-A001 (Trade-Based Money Laundering); 31 CFR § 1010.210 (Anti-Money Laundering Programme Requirements for Financial Institutions).
+* **Mandate**: In accordance with federal AML programme guidelines (31 CFR § 1010.210), the institution maintains ongoing transaction monitoring to identify activity indicative of Trade-Based Money Laundering (TBML). Per FinCEN Advisory FIN-2010-A001, third-party payments for goods or services executed by an intermediary apparently unrelated to the primary transaction constitute a material red flag requiring compliance evaluation.
+* **Internal Threshold Rule**: To mitigate data discrepancies and prevent unauthorized straight-through processing (STP), the automated system routes any name-matching variance between wire originators and transaction counterparties falling below the institutionally established 90% fuzzy-match threshold to compliance personnel for manual human-in-the-loop review.
 
-Any fuzzy matching threshold below 90% strict name matching MUST require human-in-the-loop review under 31 CFR § 1010.230.
+## Pillar 2: Structuring & Currency Transaction Reporting (CTR) Evasion
+* **Authorities**: Bank Secrecy Act (31 U.S.C. § 5324(a)(3)); 31 CFR § 1010.100(xx) (Legal Definition of Structuring); 31 CFR § 1010.311 (Filing of Currency Transaction Reports); 31 CFR § 1010.314 (Structuring Transactions Prohibited); 31 CFR § 1020.320 (Reports by Banks of Suspicious Transactions).
+* **Mandate**: Under 31 CFR § 1010.100(xx), structuring is legally defined as conducting or attempting to conduct currency transactions in any manner for the purpose of evading reporting requirements, including breaking down a sum exceeding $10,000 into smaller amounts, or conducting multiple transactions below the reporting threshold. 31 U.S.C. § 5324(a)(3) and 31 CFR § 1010.314 strictly prohibit any person from structuring or attempting to structure transactions to evade the mandatory reporting requirements under 31 CFR § 1010.311.
+* **Operational Corridor Rule**: Automated transaction monitoring systems flag wire settlements and transactions falling within the $8,500 to $9,999 CTR evasion band. Transactions exhibiting structuring patterns or velocity anomalies are prohibited from straight-through processing (STP) and must be systematically routed to AML compliance personnel for suspicious activity adjudication and potential FinCEN Form 111 SAR filing under 31 CFR § 1020.320.
+
+## Pillar 3: Geographic Exposure & Jurisdictional Risk
+* **Authorities**: 31 U.S.C. § 5318A (USA PATRIOT Act Section 311 - Special Measures for Jurisdictions of Primary Money Laundering Concern); 31 CFR § 1010.610 (Due Diligence Programmes for Foreign Financial Institutions); FATF Recommendation 19 (Higher-Risk Jurisdictions).
+* **Mandate**: In accordance with FATF standards and FinCEN regulations, the institution applies Enhanced Due Diligence (EDD) to accounts, relationships, and transactions linked to jurisdictions identified as possessing strategic AML/CFT/CPF deficiencies (e.g. active FATF Black/Grey list countries and high-risk offshore secrecy havens).
+* **Operational Risk Rule**: Transactions containing geographic alerts for active FATF-listed jurisdictions paired with secondary alerts (such as name mismatches or structuring patterns) are prohibited from straight-through processing (STP) and must be systematically routed to AML compliance for manual adjudication.

@@ -105,9 +105,10 @@ class ComplianceGraph:
             f"- Graph Topological Distance: {traversal['hops']} hops\n"
             f"- Connected Regulatory Node: {rule_label}\n"
             f"- Source Authority Document: {source_file}\n"
-            "- Statutory Rule Mandate: Under 31 CFR 1010.230, payment reconciliation engines must verify "
-            "originator identity against invoiced clients. Discrepancies without safe legal justification "
-            "must be flagged as Third-Party Payment risks to prevent Trade-Based Money Laundering (TBML).\n"
+            "- Statutory Rule Mandate: Under 31 CFR § 1010.210 and FinCEN Advisory FIN-2010-A001, automated "
+            "reconciliation engines must flag unrelated third-party wire originators for manual review to prevent "
+            "Trade-Based Money Laundering (TBML). Under 31 CFR § 1010.100(xx) and 31 U.S.C. § 5324(a)(3), "
+            "transactions broken down into the $8,500-$9,999 corridor to evade reporting are strictly prohibited as structuring.\n"
             "==================================================================="
         )
         return context_block
