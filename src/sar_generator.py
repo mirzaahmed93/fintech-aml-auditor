@@ -64,7 +64,7 @@ PART III - SUSPICIOUS ACTIVITY CLASSIFICATION (BSA / FinCEN CHECKLIST)
 --------------------------------------------------------------------------------
 {cdd_flag} FinCEN Advisory FIN-2010-A001 & 31 CFR 1010.210 - Third-Party Payment / TBML Risk
 {structuring_flag} 31 CFR 1010.100(xx) & 31 U.S.C. 5324(a)(3) - Structuring to Evade Reporting ($10K CTR Corridor)
-{jurisdiction_flag} 31 U.S.C. 5318A, 31 CFR 1010.610 & FATF Rec. 19 - Higher-Risk Jurisdiction Exposure
+{jurisdiction_flag} 31 U.S.C. 5318(i), 31 CFR 1010.610 & FATF Rec. 19 - Higher-Risk Jurisdiction Exposure
 {leak_flag} Material Model Drift - Codebase Parameter Tampering / Bypassed Review Queue
 
 PART IV - MULTI-VECTOR RISK FORENSICS MATRIX
@@ -91,7 +91,7 @@ PART V - KNOWLEDGE GRAPH AUDIT TRAIL
 --------------------------------------------------------------------------------
 Source Code Anchor:             src/matcher_agent.py (reconcile_payment)
 Knowledge Graph Traversal:      {graph_path}
-Regulatory Rule Mapped:         docs/fincen_bsa_manual.md -> Pillars 1-3 (FIN-2010-A001, 31 CFR 1010.210, 31 CFR 1010.100(xx), 31 U.S.C. 5318A)
+Regulatory Rule Mapped:         docs/fincen_bsa_manual.md -> Pillars 1-3 (FIN-2010-A001, 31 CFR 1010.210, 31 CFR 1010.100(xx), 31 U.S.C. 5318(i))
 Graph Verification Status:      Verified Active (Confidence: 1.0, AST Grounded)
 
 PART VI - SUSPICIOUS ACTIVITY NARRATIVE
@@ -109,7 +109,7 @@ AML programme requirements (31 CFR 1010.210).
 
 {"ADDITIONAL STRUCTURING INDICATOR: The wire amount ($" + f"{tx.amount:,.2f}" + ") demonstrates intentional structuring characteristics under 31 CFR 1010.100(xx) and 31 U.S.C. 5324(a)(3) designed to evade mandatory $10,000 Currency Transaction Reporting (CTR) thresholds." if structuring_risk > 0.60 else ""}
 
-{"ADDITIONAL JURISDICTIONAL RISK: The wire originated from " + origin_country + ", a jurisdiction subject to Enhanced Due Diligence (EDD) under 31 U.S.C. 5318A, 31 CFR 1010.610, and FATF Recommendation 19." if jurisdiction_risk > 0.60 else ""}
+{"ADDITIONAL JURISDICTIONAL RISK: The wire originated from " + origin_country + ", a jurisdiction subject to Enhanced Due Diligence (EDD) under 31 U.S.C. 5318(i), 31 CFR 1010.610, and FATF Recommendation 19." if jurisdiction_risk > 0.60 else ""}
 
 Based on the multi-vector forensic evaluation and absence of documented corporate affiliation
 between the remitter and invoiced party, this activity is designated as potential Trade-Based

@@ -196,7 +196,7 @@ class ComplianceEngine:
             "You are a Fintech AML Compliance Auditor. Evaluate the following transaction under:\n"
             "1. Pillar 1: FinCEN Advisory FIN-2010-A001 on Trade-Based Money Laundering (TBML) and 31 CFR § 1010.210 (AML Programme Requirements);\n"
             "2. Pillar 2: 31 CFR § 1010.100(xx) (Legal Definition of Structuring) and 31 U.S.C. § 5324(a)(3) (Structuring Prohibited);\n"
-            "3. Pillar 3: 31 U.S.C. § 5318A, 31 CFR § 1010.610, and FATF Recommendation 19 (Higher-Risk Jurisdictions).\n\n"
+            "3. Pillar 3: 31 U.S.C. § 5318(i), 31 CFR § 1010.610, and FATF Recommendation 19 (Higher-Risk Jurisdictions).\n\n"
             f"{graph_context}\n\n"
             f"Transaction ID: {tx.tx_id}\n"
             f"Remitter (Bank Statement): {tx.remitter}\n"
@@ -280,7 +280,7 @@ class ComplianceEngine:
             decision = "BLOCK"
             narrative = (
                 f"Tier 2 Escalation (Geographic Alert): Wire originated from high-risk secrecy haven ({country}) "
-                f"for remitter '{tx.remitter}'. Failed FATF Recommendation 19 enhanced due diligence and 31 U.S.C. § 5318A / 31 CFR § 1010.610. "
+                f"for remitter '{tx.remitter}'. Failed FATF Recommendation 19 enhanced due diligence and 31 U.S.C. § 5318(i) / 31 CFR § 1010.610. "
                 f"Escalated via knowledge graph traversal ({graph_traversal['formatted_path']}). Decision: BLOCK."
             )
         elif is_safe_abbreviation:

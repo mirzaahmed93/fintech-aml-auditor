@@ -289,8 +289,8 @@ with tab1:
                 cits_found.append("31 CFR 1010.100(xx) (Structuring)")
             if "5324" in narrative:
                 cits_found.append("31 U.S.C. 5324(a)(3)")
-            if "5318A" in narrative or "1010.610" in narrative or "FATF" in narrative:
-                cits_found.append("31 U.S.C. 5318A / FATF Rec. 19")
+            if "5318(i)" in narrative or "5318" in narrative or "1010.610" in narrative or "FATF" in narrative:
+                cits_found.append("31 U.S.C. 5318(i) / FATF Rec. 19")
             if "Third-Party" in narrative or "Third Party" in narrative:
                 cits_found.append("Third-Party Payment Risk (TBML)")
                 

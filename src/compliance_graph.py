@@ -108,7 +108,8 @@ class ComplianceGraph:
             "- Statutory Rule Mandate: Under 31 CFR § 1010.210 and FinCEN Advisory FIN-2010-A001, automated "
             "reconciliation engines must flag unrelated third-party wire originators for manual review to prevent "
             "Trade-Based Money Laundering (TBML). Under 31 CFR § 1010.100(xx) and 31 U.S.C. § 5324(a)(3), "
-            "transactions broken down into the $8,500-$9,999 corridor to evade reporting are strictly prohibited as structuring.\n"
+            "transactions broken down into the $8,500-$9,999 corridor to evade reporting are strictly prohibited as structuring. "
+            "Under 31 U.S.C. § 5318(i), 31 CFR § 1010.610, and FATF Recommendation 19, high-risk jurisdiction wires require Enhanced Due Diligence (EDD).\n"
             "==================================================================="
         )
         return context_block
