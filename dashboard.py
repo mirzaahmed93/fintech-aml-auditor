@@ -147,16 +147,17 @@ if "model_aligned" not in st.session_state:
     st.session_state.model_aligned = False
 if "tx_states" not in st.session_state:
     st.session_state.tx_states = {}
+if "active_policy_select" not in st.session_state:
+    st.session_state.active_policy_select = "Baseline Model (Pre-RL)"
 
 # Sidebar: Select Active Policy Model
 st.sidebar.header("Active Policy Model")
 model_options = ["Baseline Model (Pre-RL)", "Aligned Model (Post-RL)"]
-default_idx = 1 if st.session_state.model_aligned else 0
 
 selected_policy = st.sidebar.selectbox(
     "Select Active Policy",
     model_options,
-    index=default_idx
+    key="active_policy_select"
 )
 active_policy_key = "baseline" if selected_policy == "Baseline Model (Pre-RL)" else "aligned"
 
@@ -443,6 +444,7 @@ with tab2:
                     progress_bar.progress(percent)
                 st.success("LoRA weights updated successfully! Policy aligned with human compliance overrides.")
                 st.session_state.model_aligned = True
+                st.session_state.active_policy_select = "Aligned Model (Post-RL)"
                 st.session_state.tx_states.clear() # Clear memory states to reload under aligned rules
                 time.sleep(1.0)
                 st.rerun()
@@ -452,6 +454,7 @@ with tab2:
             
             if st.button("Reset Simulation"):
                 st.session_state.model_aligned = False
+                st.session_state.active_policy_select = "Baseline Model (Pre-RL)"
                 st.session_state.tx_states.clear()
                 st.rerun()
 
