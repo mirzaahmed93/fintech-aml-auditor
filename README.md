@@ -84,10 +84,16 @@ The portal exposes two key operational areas:
 * **Decision Center**: Allows the compliance officer to manually confirm blocks or apply overrides.
 
 ### Tab 2: Live Transaction Stream and Halted Funds Escrow
-* **Real-time Performance Metrics**: Displays transaction screening counts, auto-routing rates, live AI accuracy, and escrowed capital.
+* **Real-time Performance Metrics**: Displays transaction screening counts, auto-routing rates, live AI accuracy, CTR structuring alerts, and escrowed capital.
+* **Multi-Vector Risk Scoring Matrix**: Evaluates each transaction across three forensic dimensions:
+  * **Vector 1 (Identity Similarity)**: RapidFuzz Levenshtein token sort ratio comparing remitter and customer names against the 90% FinCEN standard.
+  * **Vector 2 (CTR Structuring Detection)**: Detects smurfing patterns in the $8,500 - $9,999 corridor designed to evade mandatory $10,000 Currency Transaction Reporting (31 U.S.C. 5324).
+  * **Vector 3 (Geographic Risk Exposure)**: Flags wire transfers originating from offshore secrecy havens and tax shelters (e.g. Cayman Islands, BVI, Panama) under FATF Recommendation 19.
+  * **Composite AML Risk Index**: Weighted calculation assigning actionable risk tiers (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
+* **Automated FinCEN SAR (Form 111) Generator**: Compliance officers can click **`Generate FinCEN SAR`** on any flagged or leaked transaction to produce an official, legally structured Suspicious Activity Report dossier with one-click export for law enforcement submission.
 * **Collapsible Details (Raw and Reasoning)**: Allows inspectors to expand any transaction card to view:
-  * **Raw JSON Payload**: Complete transaction structure (banking records, accounts, clearing routes).
-  * **Deep Reasoning**: Matching similarity scores, compliance checklists, and the Graphify relationship mapping path.
+  * **Raw JSON Payload**: Complete transaction structure (banking records, accounts, clearing routes, multi-vector forensics).
+  * **Deep Reasoning**: Multi-vector forensic breakdown, compliance checklists, and active NetworkX knowledge graph traversal paths.
 * **Active Escrow Controls**: Flagged transactions are placed in a `HALTED & ESCROWED` state. Officers can click `Release Funds` or `Seize Funds` to update the transaction state.
 * **Interactive Retraining**: If overrides are made on the unaligned model, a banner appears enabling you to click **`Fine-Tune Auditor Model on Overrides`**. This runs an incremental training epoch, updating the policy weights to automatically resolve those edge cases correctly.
 
@@ -97,10 +103,12 @@ The portal exposes two key operational areas:
 
 * `docs/fincen_bsa_manual.md`: Regulatory manual detailing CDD guidelines and thresholds.
 * `src/matcher_agent.py`: Baseline name-matching reconciliation engine.
+* `src/compliance_graph.py`: Knowledge graph retriever and AST-to-regulatory traversal engine.
+* `src/sar_generator.py`: FinCEN Form 111 Suspicious Activity Report dossier generator.
 * `generate_poisoned_prs.py`: Script to generate 50 mock pull requests (mix of compliant and poisoned code) for training.
 * `train_auditor.py`: Training script for the Blue Team Compliance Auditor via GRPO.
 * `red_team_agent.py`: Training script for the Rogue Developer adversarial agent.
-* `compliance_engine.py`: Dual-tiered transaction screening and routing engine.
+* `compliance_engine.py`: Dual-tiered transaction screening and multi-vector risk engine.
 * `dashboard.py`: Streamlit human-in-the-loop web portal.
 * `tinker.py`: Local SDK wrapper and simulator for offline/API-fallback testing.
 

@@ -415,8 +415,10 @@ with tab2:
             if st.session_state.tx_states[state_key_prefix + tx.tx_id] in ["HALTED", "SEIZED"]
         )
         
+        structuring_alerts = sum(1 for r in audit_results if r.get("structuring_risk", 0.0) > 0.60)
+        
         # Display Metrics Dashboard Row
-        met_col1, met_col2, met_col3, met_col4 = st.columns(4)
+        met_col1, met_col2, met_col3, met_col4, met_col5 = st.columns(5)
         with met_col1:
             st.metric(label="Transactions Screened", value=total_tx)
         with met_col2:
@@ -424,6 +426,8 @@ with tab2:
         with met_col3:
             st.metric(label="AI Auditor Accuracy", value=f"{ai_accuracy:.1f}%")
         with met_col4:
+            st.metric(label="Structuring Alerts (CTR)", value=structuring_alerts)
+        with met_col5:
             st.metric(label="Escrowed Capital", value=f"${active_escrow:,.2f}")
             
         st.markdown("---")
@@ -505,6 +509,35 @@ with tab2:
                 tier_color = "#f59e0b"
                 tier_bg = "rgba(245, 158, 11, 0.15)"
                 
+            # Multi-Vector Metrics & Risk Badges
+            risk_level = res.get("risk_level", "LOW")
+            comp_score = res.get("composite_risk", 0.10)
+            struct_risk = res.get("structuring_risk", 0.05)
+            geo_risk = res.get("jurisdiction_risk", 0.10)
+            origin_country = getattr(tx, "origin_country", "US")
+            
+            if risk_level == "CRITICAL":
+                risk_bg = "rgba(239, 68, 68, 0.2)"
+                risk_color = "#ef4444"
+            elif risk_level == "HIGH":
+                risk_bg = "rgba(249, 115, 22, 0.2)"
+                risk_color = "#f97316"
+            elif risk_level == "MEDIUM":
+                risk_bg = "rgba(234, 179, 8, 0.2)"
+                risk_color = "#eab308"
+            else:
+                risk_bg = "rgba(34, 197, 94, 0.15)"
+                risk_color = "#22c55e"
+            risk_badge = f'<span style="background-color: {risk_bg}; color: {risk_color}; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; border: 1px solid {risk_color}; margin-right: 8px;">Risk: {comp_score:.2f} ({risk_level})</span>'
+
+            struct_badge = ""
+            if struct_risk > 0.60:
+                struct_badge = f'<span style="background-color: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; border-radius: 10px; padding: 3px 8px; font-size: 11px; font-weight: bold; margin-right: 8px;">CTR STRUCTURING ALERT (${tx.amount:,.2f})</span>'
+
+            geo_badge = ""
+            if geo_risk > 0.60:
+                geo_badge = f'<span style="background-color: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; border-radius: 10px; padding: 3px 8px; font-size: 11px; font-weight: bold; margin-right: 8px;">OFFSHORE HAVEN ({origin_country})</span>'
+                
             # Card UI
             st.markdown(f"""
             <div style="background-color: #1e293b; padding: 18px; border-radius: 8px; margin-bottom: 16px; border-left: 6px solid {status_color}; border: 1px solid #334155;">
@@ -512,11 +545,14 @@ with tab2:
                     <div>
                         <strong style="color: #60a5fa; font-size: 17px; font-family: monospace;">{tx.tx_id}</strong> 
                         <span style="color: #64748b; margin: 0 10px;">|</span>
-                        <span style="font-size: 15px;"><strong>Remitter:</strong> {tx.remitter} ➔ <strong>Customer:</strong> {tx.customer}</span>
+                        <span style="font-size: 15px;"><strong>Remitter:</strong> {tx.remitter} <span style="background-color: #334155; color: #94a3b8; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: monospace;">{origin_country}</span> ➔ <strong>Customer:</strong> {tx.customer}</span>
                         <span style="color: #64748b; margin: 0 10px;">|</span>
                         <strong style="color: #cbd5e1;">Amount: ${tx.amount:,.2f}</strong>
                     </div>
                     <div style="margin-top: 5px;">
+                        {struct_badge}
+                        {geo_badge}
+                        {risk_badge}
                         <span style="background-color: {tier_bg}; color: {tier_color}; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; border: 1px solid {tier_color}; margin-right: 12px;">{tier_badge}</span>
                         <span style="background-color: {status_bg}; color: {status_color}; padding: 4px 16px; border-radius: 12px; font-size: 14px; font-weight: bold; border: 1px solid {status_color}; text-transform: uppercase;">{status_label}</span>
                     </div>
@@ -526,28 +562,52 @@ with tab2:
                 </div>
             """, unsafe_allow_html=True)
             
-            # Action controls inside streamlit for halted transactions
-            if current_status == "HALTED" and not res.get("is_leak"):
-                btn_col1, btn_col2, _ = st.columns([1, 1, 2])
-                with btn_col1:
+            # Action controls inside streamlit for halted, seized, and suspicious transactions
+            action_cols = st.columns([1, 1, 1.4, 1.6])
+            with action_cols[0]:
+                if current_status == "HALTED" and not res.get("is_leak"):
                     if st.button(f"Release Funds ({tx.tx_id})", key=f"rel_{tx.tx_id}"):
                         st.session_state.tx_states[unique_tx_key] = "RELEASED"
                         st.rerun()
-                with btn_col2:
+            with action_cols[1]:
+                if current_status == "HALTED" and not res.get("is_leak"):
                     if st.button(f"Seize Funds ({tx.tx_id})", key=f"sz_{tx.tx_id}"):
                         st.session_state.tx_states[unique_tx_key] = "SEIZED"
                         st.rerun()
+            with action_cols[2]:
+                sar_eligible = (current_status in ["HALTED", "SEIZED"] or res.get("is_leak") or risk_level in ["HIGH", "CRITICAL"] or struct_risk > 0.60)
+                if sar_eligible:
+                    sar_active = st.session_state.get(f"show_sar_{tx.tx_id}", False)
+                    btn_label = f"Hide SAR ({tx.tx_id})" if sar_active else f"Generate FinCEN SAR ({tx.tx_id})"
+                    if st.button(btn_label, key=f"sar_toggle_{tx.tx_id}"):
+                        st.session_state[f"show_sar_{tx.tx_id}"] = not sar_active
+                        st.rerun()
+                        
+            # Render FinCEN Form 111 SAR Filing Dossier if active
+            if st.session_state.get(f"show_sar_{tx.tx_id}", False):
+                from src.sar_generator import generate_fincen_sar_dossier
+                sar_dossier = generate_fincen_sar_dossier(tx, res)
+                st.markdown(f"##### FinCEN Form 111 Regulatory Filing Dossier: {tx.tx_id}")
+                st.code(sar_dossier, language="text")
+                st.download_button(
+                    label=f"Download Official FinCEN SAR ({tx.tx_id}.txt)",
+                    data=sar_dossier,
+                    file_name=f"FinCEN_SAR_{tx.tx_id}.txt",
+                    mime="text/plain",
+                    key=f"dl_sar_{tx.tx_id}"
+                )
             
             # Expandable Details Panel for Raw Data and Deep Reasoning
             with st.expander("Click to view Raw Transaction Data & Deep Audit Reasoning"):
                 raw_payload = {
                     "transaction_id": tx.tx_id,
                     "timestamp": "2026-08-30T17:12:00Z",
-                    "originator_bank": "Chase Manhattan Bank NA" if tx.tx_id != "TX-105" else "Deutsche Bank AG (Frankfurt)",
+                    "originator_country": origin_country,
+                    "originator_bank": "Chase Manhattan Bank NA" if tx.tx_id != "TX-105" else "Offshore Settlement Clearing (KY)",
                     "originator_record": {
                         "name": tx.remitter,
                         "type": "Individual" if "corp" not in tx.remitter.lower() and "ltd" not in tx.remitter.lower() else "Corporate",
-                        "account_number": f"ACT-{"1048" if tx.tx_id == "TX-101" else "8821"}"
+                        "account_number": f"ACT-{'1048' if tx.tx_id == 'TX-101' else '8821'}"
                     },
                     "beneficiary_record": {
                         "name": tx.customer,
@@ -558,6 +618,13 @@ with tab2:
                         "amount": tx.amount,
                         "currency": "USD",
                         "payment_method": "ACH_RECONCILIATION" if tx.tx_id != "TX-105" else "WIRE_TRANSFER"
+                    },
+                    "multi_vector_forensics": {
+                        "identity_score": round(res["score"], 4),
+                        "structuring_risk": round(struct_risk, 4),
+                        "jurisdiction_risk": round(geo_risk, 4),
+                        "composite_risk_index": round(comp_score, 4),
+                        "risk_classification": risk_level
                     },
                     "metadata": {
                         "declared_invoice_purpose": tx.details or "Internal accounts reconciliation",
@@ -571,11 +638,16 @@ with tab2:
                     st.json(raw_payload)
                     
                 with exp_col2:
-                    st.markdown("##### Deep Reasoning & Graph Context")
+                    st.markdown("##### Deep Reasoning & Multi-Vector Context")
                     
                     # Compute match metrics
                     score = res["score"]
-                    st.markdown(f"**String Matching Score:** `{score * 100:.1f}%` similarity")
+                    st.markdown(f"**Vector 1 (Identity Similarity):** `{score * 100:.1f}%` match")
+                    struct_note = "(CTR Threshold Avoidance Corridor $8.5K-$10K)" if struct_risk > 0.60 else "(Standard Amount)"
+                    st.markdown(f"**Vector 2 (Structuring Index):** `{struct_risk:.2f} / 1.00` {struct_note}")
+                    geo_note = "(FATF Rec. 19 Secrecy Jurisdiction Multiplier)" if geo_risk > 0.60 else "(Domestic Clearing)"
+                    st.markdown(f"**Vector 3 (Geographic Risk):** `{origin_country}` - `{geo_risk:.2f} / 1.00` {geo_note}")
+                    st.markdown(f"**Composite AML Risk Index:** `{comp_score:.2f} / 1.00` ({risk_level} RISK)")
                     
                     # Governing Law Checklist
                     st.markdown("**Compliance Checklist Metrics:**")
@@ -588,6 +660,11 @@ with tab2:
                         st.markdown("Originator Identity Verified under FinCEN 90% Standard")
                     else:
                         st.markdown("Originator Name Mismatches FinCEN 90% Standard")
+                        
+                    if struct_risk > 0.60:
+                        st.markdown("Structuring Flag Active under 31 U.S.C. § 5324")
+                    else:
+                        st.markdown("No Structuring Behavior Detected")
                         
                     if tx.amount > 100000.00:
                         st.markdown("High-Value Settlement (> $100K High Risk Flag)")
