@@ -14,6 +14,28 @@ In modern fintech, minor modifications to transaction matching thresholds can by
 
 ---
 
+## Why Explore Threshold Alterations? (Business Need & Legal Backing)
+
+In automated payment reconciliation, setting match thresholds represents a constant tension between product growth and regulatory compliance:
+
+### 1. Why Developers and Product Teams Propose Lowering Thresholds
+* **Reducing Customer Friction**: Preventing payment delays and checkout abandonment when legitimate customers have slight name formatting discrepancies (e.g., `John Smith` vs `John A. Smith Jr.`).
+* **Clearing Operational Backlogs**: Cutting down manual review queues when compliance operations teams are overwhelmed by false-positive halts.
+* **Technical Misconception**: Engineers often treat AML name matching as a flexible fuzzy search problem rather than a legally mandated perimeter.
+* **Insider Threat Simulation**: Detecting rogue developers who intentionally introduce subtle matching backdoors to allow illicit third-party shell companies to siphon funds.
+
+### 2. The Business Justification
+* **Existential Risk Mitigation**: Sponsor banks will freeze payment APIs and regulators will revoke licenses if unauthorised third-party funds flow unmonitored.
+* **Cost Efficiency**: Automating the resolution of name variations using a fine-tuned model reduces compliance contractor headcount while keeping the 90% standard intact.
+* **Intelligent CI/CD Gatekeeping**: Standard developer testing tools (unit tests, linters) cannot detect that a parameter change represents an AML compliance violation.
+
+### 3. Legal and Regulatory Backing
+* **FinCEN Customer Due Diligence (CDD) Final Rule (31 CFR 1010.230)**: Requires covered financial institutions to maintain procedures reasonably designed to verify beneficial ownership and prevent Third-Party Payment Risk (TBML).
+* **Federal Reserve & OCC Model Risk Management Guidance (SR 11-7 / OCC 2011-12)**: Legally classifies transaction matching algorithms as "Models." Altering a matching threshold is classified as a *Material Model Change*, requiring formal validation, risk justification, and documented audit governance.
+* **Enforcement Precedent (October 2024 DOJ/FinCEN $3.09B TD Bank Settlement)**: Federal authorities penalised TD Bank $3.09 billion specifically for prioritising a "convenient customer experience" and cost-cutting by suppressing alerts and failing to monitor risky payment channels.
+
+---
+
 ## Mechanics: How It Works
 
 This system combines modern reinforcement learning and efficient fine-tuning to train an expert compliance model:
@@ -21,7 +43,7 @@ This system combines modern reinforcement learning and efficient fine-tuning to 
 * **Base Model (Qwen-9B)**: Acts as the foundation model for understanding code logic, parsing text, and reasoning about financial flows.
 * **LoRA (Low-Rank Adaptation)**: Rather than retraining billions of weights in the base model, the base model is frozen. A lightweight adapter layer is trained(a tiny fraction of the model size of approx. 20MB-50MB) containing compliance-specific knowledge. This reduces training compute requirements by over 98% while achieving high accuracy.
 * **GRPO (Group Relative Policy Optimisation)**: Instead of requiring an expensive helper "critic" model, GRPO generates a group of draft reviews for each code change, scores them against FinCEN CDD compliance rules, and adjusts the model based on relative draft quality.
-* **Knowledge Graph (Graphify)**: Extracts structural relationships from code ASTs (abstract syntax trees_ and regulatory guidelines (FinCEN 31 CFR 1010.230) so the model can cite exact legal rules when auditing code.
+* **Knowledge Graph (Graphify)**: Extracts structural relationships from code ASTs (abstract syntax trees) and regulatory guidelines (FinCEN 31 CFR 1010.230) so the model can cite exact legal rules when auditing code.
 * **Continuous Feedback Loop**: When a human compliance officer overrides a flagged transaction in the dashboard, the decision is logged and can be used to run incremental fine-tuning epochs that align the model with human judgment.
 
 ---
