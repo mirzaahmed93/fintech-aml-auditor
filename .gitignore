@@ -5,7 +5,8 @@ __pycache__/
 *.pyc
 
 # Project generated assets / databases
-graphify-out/
+graphify-out/*
+!graphify-out/graph.json
 synthetic_prs/
 
 # OS specific files

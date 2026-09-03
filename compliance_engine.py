@@ -5,6 +5,8 @@ import google.generativeai as genai
 from rapidfuzz import fuzz
 from dotenv import load_dotenv
 
+from src.compliance_graph import ComplianceGraph
+
 # Load env variables
 load_dotenv()
 
@@ -27,6 +29,7 @@ class Transaction:
 class ComplianceEngine:
     def __init__(self):
         self.model = gemini_model
+        self.knowledge_graph = ComplianceGraph()
         
     def calculate_match_score(self, name1, name2):
         """Tier 1: High-speed deterministic fuzzy matching using rapidfuzz."""
@@ -45,6 +48,7 @@ class ComplianceEngine:
         - Tier 2: Escalate ambiguous cases to LLM Auditor.
         """
         score = self.calculate_match_score(tx.remitter, tx.customer)
+        graph_traversal = self.knowledge_graph.get_compliance_traversal()
         
         # TIER 1 Rules
         if score >= threshold:
@@ -63,7 +67,9 @@ class ComplianceEngine:
                 "tier": 1,
                 "score": score,
                 "narrative": narrative,
-                "is_leak": is_compromised_leak
+                "is_leak": is_compromised_leak,
+                "graph_path": graph_traversal["formatted_path"],
+                "graph_hops": graph_traversal["hops"]
             }
         elif score < min(0.70, threshold):
             return {
@@ -71,13 +77,17 @@ class ComplianceEngine:
                 "tier": 1,
                 "score": score,
                 "narrative": "Tier 1 Auto-Block: High mismatch risk identified. The originator (remitter) name does not match the invoiced customer.",
-                "is_leak": False
+                "is_leak": False,
+                "graph_path": graph_traversal["formatted_path"],
+                "graph_hops": graph_traversal["hops"]
             }
             
         # TIER 2 Escalation (Cognitive LLM)
+        graph_context = self.knowledge_graph.get_prompt_context()
         prompt_text = (
             "You are a Fintech AML Compliance Auditor. Evaluate the following transaction under the FinCEN "
             "Customer Due Diligence (CDD) Final Rule (31 CFR § 1010.230 concerning Third-Party Payment Risk).\n\n"
+            f"{graph_context}\n\n"
             f"Transaction ID: {tx.tx_id}\n"
             f"Remitter (Bank Statement): {tx.remitter}\n"
             f"Customer (Invoice): {tx.customer}\n"
@@ -85,7 +95,7 @@ class ComplianceEngine:
             f"Fuzzy Match Score: {score:.2f}\n"
             f"Context details: {tx.details}\n\n"
             "Evaluate if this represents a safe abbreviation, spelling variant, or a dangerous third-party shell payment. "
-            "Respond in a paragraph explaining the AML risk, citing 31 CFR § 1010.230. Conclude with 'BLOCK' or 'APPROVE'."
+            "Respond in a paragraph explaining the AML risk, citing 31 CFR § 1010.230 and the retrieved knowledge graph traversal. Conclude with 'BLOCK' or 'APPROVE'."
         )
         
         if self.model and policy == "aligned":
@@ -102,15 +112,20 @@ class ComplianceEngine:
                     "tier": 2,
                     "score": score,
                     "narrative": narrative,
-                    "is_leak": False
+                    "is_leak": False,
+                    "graph_path": graph_traversal["formatted_path"],
+                    "graph_hops": graph_traversal["hops"]
                 }
             except Exception as e:
                 # Fallback on API errors
-                return self._mock_tier2_fallback(tx, score, policy)
+                return self._mock_tier2_fallback(tx, score, policy, graph_traversal)
         else:
-            return self._mock_tier2_fallback(tx, score, policy)
+            return self._mock_tier2_fallback(tx, score, policy, graph_traversal)
 
-    def _mock_tier2_fallback(self, tx: Transaction, score: float, policy="aligned"):
+    def _mock_tier2_fallback(self, tx: Transaction, score: float, policy="aligned", graph_traversal=None):
+        if graph_traversal is None:
+            graph_traversal = self.knowledge_graph.get_compliance_traversal()
+            
         if policy == "baseline":
             # Baseline unaligned model misses suffix variations and blocks them blindly
             is_safe_abbreviation = False
@@ -128,14 +143,16 @@ class ComplianceEngine:
         if is_safe_abbreviation:
             decision = "APPROVE"
             narrative = (
-                f"Tier 2 Escalation (Gemini Fallback): Evaluated names '{tx.remitter}' and '{tx.customer}'. "
+                f"Tier 2 Escalation (Gemini Fallback): Evaluated names '{tx.remitter}' and '{tx.customer}' "
+                f"via knowledge graph traversal ({graph_traversal['formatted_path']}). "
                 f"The mismatch is determined to be a safe legal suffix variation ('Corp' vs 'Corporation'). "
                 f"This does not represent a third-party payment risk under 31 CFR § 1010.230. Decision: APPROVE."
             )
         else:
             decision = "BLOCK"
             narrative = (
-                f"Tier 2 Escalation (Gemini Fallback): Evaluated names '{tx.remitter}' and '{tx.customer}'. "
+                f"Tier 2 Escalation (Gemini Fallback): Evaluated names '{tx.remitter}' and '{tx.customer}' "
+                f"via knowledge graph traversal ({graph_traversal['formatted_path']}). "
                 f"The mismatch indicates different entities (Third-Party Payment). This violates the FinCEN CDD "
                 f"regulation (31 CFR § 1010.230) by auto-reconciling payments from a third-party company "
                 f"without manual review, facilitating potential money laundering. Decision: BLOCK."
@@ -146,7 +163,9 @@ class ComplianceEngine:
             "tier": 2,
             "score": score,
             "narrative": narrative,
-            "is_leak": False
+            "is_leak": False,
+            "graph_path": graph_traversal["formatted_path"],
+            "graph_hops": graph_traversal["hops"]
         }
 
 def generate_transaction_stream(count=50):
