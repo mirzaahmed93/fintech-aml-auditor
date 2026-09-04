@@ -132,7 +132,7 @@ The portal exposes two key operational areas:
 
 ## Setup and Installation
 
-### 1. Initialize Environment
+### 1. Initialise Environment
 Set up a local virtual environment:
 ```bash
 python3 -m venv .venv
@@ -140,44 +140,56 @@ source .venv/bin/activate
 pip install --upgrade pip
 ```
 
-### 2. Configure Environment Keys
+### 2. Install Core Dependencies
+Install the required packages to run the interactive dashboard, compliance engine, and knowledge graph queries:
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Configure Environment Keys
 Create a `.env` file in the root directory of the project to store your access credentials. This file is ignored by Git to protect your secrets:
 ```ini
 GEMINI_API_KEY=your-gemini-api-key
 ```
 
-### 3. Install Libraries and Generate Data
+### 4. Generate Mock PR Sandbox
+Generate the synthetic pull requests (safe vs. poisoned threshold PRs) for testing:
 ```bash
-# Install local dependencies in editable mode
-pip install -e /Users/ahmedmirza/git/graphify
-pip install -e "/Users/ahmedmirza/git/tinker-cookbook[tutorials]"
-
-# Generate mock PR database
 python3 generate_poisoned_prs.py
 ```
 
 ---
 
-## Running the Pipelines
+## Running the Application
 
-### 1. Rebuild the Knowledge Graph
-Ensure your `.env` contains your Gemini credentials and run the extraction:
+### 1. Launch the Streamlit Verification Portal
+Launch the compliance dashboard to review PRs, monitor the live multi-vector transaction stream, and generate FinCEN Form 111 SAR filings:
 ```bash
-# Extract semantic relations
+streamlit run dashboard.py
+```
+
+---
+
+## Optional: Advanced Pipelines and Model Training
+
+The repository includes pre-built artifacts (`graphify-out/graph.json` and local simulator `tinker.py`), meaning external frameworks are not required to run the demo. If you wish to re-extract the graph or retrain the RL models from scratch:
+
+### 1. Rebuild the Knowledge Graph (Optional)
+If modifying Python source code or regulatory guidelines in `docs/fincen_bsa_manual.md`, you can re-extract the AST semantic graph using Graphify:
+```bash
+# Requires graphify installed in your environment
 python3 -m graphify extract .
 ```
 
-### 2. Run Auditor and Red Team Training
-Run the RL training scripts:
+### 2. Run Auditor and Red Team RL Training (Optional)
+To train the Blue Team (Compliance Auditor) and Red Team (Rogue Developer) via Group Relative Policy Optimisation (GRPO) on a Tinker cluster:
 ```bash
+# Requires tinker and tinker-cookbook installed in your environment
+# pip install tinker tinker-cookbook
+
 # Train Blue Team Auditor
 python3 train_auditor.py
 
 # Train Red Team Rogue Developer
 python3 red_team_agent.py
-```
-
-### 3. Launch the Web Portal
-```bash
-streamlit run dashboard.py
 ```
