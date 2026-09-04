@@ -112,6 +112,10 @@ The portal exposes two key operational areas:
   * **Deep Reasoning**: Multi-vector forensic breakdown, compliance checklists, and active NetworkX knowledge graph traversal paths.
 * **Active Escrow Controls**: Flagged transactions are placed in a `HALTED & ESCROWED` state. Officers can click `Release Funds` or `Seize Funds` to update the transaction state.
 * **Interactive Retraining**: If overrides are made on the unaligned model, a banner appears enabling you to click **`Fine-Tune Auditor Model on Overrides`**. This runs an incremental training epoch, updating the policy weights to automatically resolve those edge cases correctly.
+* **Executive Portfolio Risk Analytics Panel**: Embedded interactive Plotly visualisations directly within Tab 2:
+  * **AML Risk Tier Classification**: Donut chart displaying the proportional distribution of transactions across Low, Medium, High, and Critical risk tiers.
+  * **Jurisdictional Capital Exposure**: Horizontal bar chart comparing cleared volume across originating countries, visually distinguishing domestic clearing from offshore secrecy regimes (31 U.S.C. § 5318(i) / FATF Recommendation 19).
+  * **CTR Structuring Corridor Forensics**: Scatter chart tracking settlement amounts against the $10,000 mandatory Currency Transaction Reporting threshold, highlighting the active $8,500–$9,999 avoidance band under 31 CFR § 1010.100(xx).
 
 ---
 
@@ -126,6 +130,8 @@ The portal exposes two key operational areas:
 * `red_team_agent.py`: Training script for the Rogue Developer adversarial agent.
 * `compliance_engine.py`: Dual-tiered transaction screening and multi-vector risk engine.
 * `dashboard.py`: Streamlit human-in-the-loop web portal.
+* `github_action_auditor.py`: Production CLI gatekeeper evaluating pull requests against compliance rules.
+* `.github/workflows/aml_compliance_gate.yml`: Automated GitHub Actions CI/CD workflow blocking illicit threshold alterations.
 * `tinker.py`: Local SDK wrapper and simulator for offline/API-fallback testing.
 
 ---
@@ -163,9 +169,19 @@ python3 generate_poisoned_prs.py
 ## Running the Application
 
 ### 1. Launch the Streamlit Verification Portal
-Launch the compliance dashboard to review PRs, monitor the live multi-vector transaction stream, and generate FinCEN Form 111 SAR filings:
+Launch the compliance dashboard to review PRs, monitor the live multi-vector transaction stream, explore Plotly risk analytics, and generate FinCEN Form 111 SAR filings:
 ```bash
 streamlit run dashboard.py
+```
+
+### 2. Run the CI/CD Compliance Gatekeeper (Local Test)
+Verify that proposed codebase changes satisfy the 90% FinCEN baseline before committing:
+```bash
+# Test compliant baseline (returns exit code 0)
+python3 github_action_auditor.py --target-file src/matcher_agent.py
+
+# Test against a poisoned PR threshold (returns exit code 1 and blocks merge)
+python3 github_action_auditor.py --target-file synthetic_prs/pr_0_matcher_agent.py
 ```
 
 ---

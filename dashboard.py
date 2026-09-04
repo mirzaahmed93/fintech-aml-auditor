@@ -7,6 +7,8 @@ import asyncio
 import time
 import google.generativeai as genai
 from dotenv import load_dotenv
+import plotly.graph_objects as go
+import plotly.express as px
 
 # Load local environment variables (.env)
 load_dotenv()
@@ -441,6 +443,148 @@ with tab2:
             st.metric(label="Escrowed Capital", value=f"${active_escrow:,.2f}")
             
         st.markdown("---")
+        
+        # EXECUTIVE PORTFOLIO RISK ANALYTICS PANEL (Enhancement 4)
+        with st.expander("Executive Portfolio Risk Analytics and Forensics", expanded=False):
+            st.markdown("#### Portfolio Risk Architecture and Forensic Distribution")
+            
+            # Aggregate risk and forensic data across transactions
+            risk_counts = {"LOW": 0, "MEDIUM": 0, "HIGH": 0, "CRITICAL": 0}
+            jurisdiction_data = {}
+            corridor_x = []
+            corridor_y = []
+            corridor_labels = []
+            corridor_colors = []
+            
+            for idx, (tx_item, res_item) in enumerate(zip(transactions, audit_results)):
+                # Risk level counts
+                lvl = res_item.get("risk_level", "LOW")
+                risk_counts[lvl] = risk_counts.get(lvl, 0) + 1
+                
+                # Jurisdictional data
+                ctry = getattr(tx_item, "origin_country", "US")
+                if ctry not in jurisdiction_data:
+                    jurisdiction_data[ctry] = {"count": 0, "volume": 0.0, "high_risk": res_item.get("jurisdiction_risk", 0.0) > 0.50}
+                jurisdiction_data[ctry]["count"] += 1
+                jurisdiction_data[ctry]["volume"] += tx_item.amount
+                
+                # CTR structuring corridor data
+                corridor_x.append(f"TX-{idx+100}")
+                corridor_y.append(tx_item.amount)
+                corridor_labels.append(
+                    f"Transaction: {tx_item.tx_id}<br>"
+                    f"Remitter: {tx_item.remitter}<br>"
+                    f"Amount: ${tx_item.amount:,.2f}<br>"
+                    f"Structuring Risk: {res_item.get('structuring_risk', 0.0):.2f}<br>"
+                    f"Origin: {ctry}"
+                )
+                
+                # Colour-code scatter markers
+                if res_item.get("structuring_risk", 0.0) > 0.60:
+                    corridor_colors.append("#ef4444")
+                elif 8500.0 <= tx_item.amount < 10000.0:
+                    corridor_colors.append("#f59e0b")
+                else:
+                    corridor_colors.append("#3b82f6")
+                    
+            chart_col1, chart_col2 = st.columns([1, 1.2])
+            
+            # Chart 1: Donut Chart for Risk Tier Distribution
+            with chart_col1:
+                labels_donut = list(risk_counts.keys())
+                values_donut = [risk_counts[k] for k in labels_donut]
+                colors_donut = ["#22c55e", "#eab308", "#f97316", "#ef4444"]
+                
+                fig_donut = go.Figure(data=[go.Pie(
+                    labels=labels_donut,
+                    values=values_donut,
+                    hole=0.55,
+                    marker=dict(colors=colors_donut, line=dict(color='#0f172a', width=2)),
+                    textinfo="label+percent",
+                    insidetextorientation="radial"
+                )])
+                fig_donut.update_layout(
+                    title=dict(text="AML Risk Tier Classification", font=dict(color="#f8fafc", size=15)),
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font=dict(color="#cbd5e1", family="sans-serif"),
+                    legend=dict(orientation="h", yanchor="bottom", y=-0.25, xanchor="center", x=0.5),
+                    margin=dict(l=15, r=15, t=40, b=30),
+                    height=300
+                )
+                st.plotly_chart(fig_donut, use_container_width=True)
+                
+            # Chart 2: Jurisdictional Volume & Exposure Breakdown
+            with chart_col2:
+                jurisdictions_sorted = sorted(jurisdiction_data.keys(), key=lambda k: jurisdiction_data[k]["volume"], reverse=True)
+                volumes = [jurisdiction_data[k]["volume"] for k in jurisdictions_sorted]
+                counts = [jurisdiction_data[k]["count"] for k in jurisdictions_sorted]
+                bar_colors = ["#ef4444" if jurisdiction_data[k]["high_risk"] else "#3b82f6" for k in jurisdictions_sorted]
+                
+                fig_bar = go.Figure(data=[go.Bar(
+                    x=volumes,
+                    y=jurisdictions_sorted,
+                    orientation='h',
+                    marker=dict(color=bar_colors, line=dict(color='#0f172a', width=1)),
+                    text=[f"${v:,.0f} ({c} tx)" for v, c in zip(volumes, counts)],
+                    textposition='auto'
+                )])
+                fig_bar.update_layout(
+                    title=dict(text="Jurisdictional Capital Exposure (FATF Havens in Red)", font=dict(color="#f8fafc", size=15)),
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font=dict(color="#cbd5e1", family="sans-serif"),
+                    xaxis=dict(title="Settlement Volume (USD)", gridcolor="#334155"),
+                    yaxis=dict(title="Origin Country", autorange="reversed"),
+                    margin=dict(l=15, r=15, t=40, b=30),
+                    height=300
+                )
+                st.plotly_chart(fig_bar, use_container_width=True)
+                
+            # Chart 3: CTR Structuring Corridor Forensics ($8,500 - $10,000 threshold avoidance band)
+            fig_corridor = go.Figure()
+            
+            # Shaded danger corridor ($8,500 to $9,999)
+            fig_corridor.add_hrect(
+                y0=8500, y1=9999,
+                fillcolor="rgba(239, 68, 68, 0.15)",
+                layer="below", line_width=1, line_color="rgba(239, 68, 68, 0.4)",
+                annotation_text="CTR Evasion Corridor ($8,500 - $9,999) - 31 CFR § 1010.100(xx)",
+                annotation_position="top left",
+                annotation_font=dict(color="#f87171", size=11)
+            )
+            
+            # Statutory CTR filing line ($10,000)
+            fig_corridor.add_hline(
+                y=10000, line_dash="dash", line_color="#ef4444", line_width=2,
+                annotation_text="Mandatory CTR Reporting Threshold ($10,000) - 31 CFR § 1010.311",
+                annotation_position="bottom right",
+                annotation_font=dict(color="#ef4444", size=11)
+            )
+            
+            # Scatter points
+            fig_corridor.add_trace(go.Scatter(
+                x=corridor_x,
+                y=corridor_y,
+                mode='markers',
+                marker=dict(size=9, color=corridor_colors, line=dict(width=1, color='#ffffff')),
+                text=corridor_labels,
+                hoverinfo='text',
+                name='Settlement Amounts'
+            ))
+            
+            fig_corridor.update_layout(
+                title=dict(text="Currency Transaction Reporting (CTR) Structuring Forensics", font=dict(color="#f8fafc", size=15)),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="#cbd5e1", family="sans-serif"),
+                xaxis=dict(title="Transaction Stream Sequence", gridcolor="#1e293b"),
+                yaxis=dict(title="Settlement Amount (USD)", gridcolor="#334155"),
+                margin=dict(l=15, r=15, t=40, b=30),
+                height=340
+            )
+            st.plotly_chart(fig_corridor, use_container_width=True)
+            st.markdown("---")
         
         # INTERACTIVE TRAINING SECTION (Only visible on Baseline where overrides exist)
         overrides_count = sum(
