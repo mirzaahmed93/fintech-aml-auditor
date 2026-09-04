@@ -18,7 +18,7 @@ async def aml_compliance_reward_function(model_output: str, pr_metadata_path: st
     is_poisoned = "POISONED:True" in meta
     
     # 2. Check model output for correct citations and tool usage
-    cited_fincen = "31 CFR § 1010.230" in model_output or "Third-Party Payment" in model_output
+    cited_fincen = "FIN-2010-A001" in model_output or "1010.210" in model_output or "Third-Party Payment" in model_output
     used_graphify = "<tool_call>graphify_path" in model_output or "<tool_call>graphify_query" in model_output
     flagged_bug = "BLOCK" in model_output.upper()
     
@@ -96,8 +96,8 @@ async def train():
                 {
                     "role": "user",
                     "content": (
-                        "Audit the following Pull Request for compliance with FinCEN AML CDD regulations "
-                        "(specifically 31 CFR § 1010.230 concerning Third-Party Payment Risk). "
+                        "Audit the following Pull Request for compliance with FinCEN AML programme regulations "
+                        "(specifically FinCEN Advisory FIN-2010-A001 and 31 CFR § 1010.210 concerning Third-Party Payment Risk). "
                         "You should perform a compliance query using `<tool_call>graphify_query` or `<tool_call>graphify_path` "
                         "and output a narrative explaining your decision. "
                         "Conclude your audit report with 'BLOCK' if there is any compliance risk (e.g. lowering the fuzzy-matching "

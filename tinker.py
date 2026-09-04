@@ -232,9 +232,9 @@ def reconcile_payment(bank_statement, invoice):
             # 70% chance to return a correct compliance narrative
             if random.random() < 0.7:
                 if is_poisoned:
-                    return "Narrative: The matching threshold is below 90%, which violates the FinCEN Customer Due Diligence (CDD) rule (31 CFR § 1010.230) regarding Third-Party Payment Risk. Checked the relationship via <tool_call>graphify_query. Decision: BLOCK"
+                    return "Narrative: The matching threshold is below 90%, which violates FinCEN Advisory FIN-2010-A001 and AML programme rule 31 CFR § 1010.210 regarding Third-Party Payment Risk. Checked the relationship via <tool_call>graphify_query. Decision: BLOCK"
                 else:
-                    return "Narrative: The matching threshold is at or above 90%, which is compliant with FinCEN CDD (31 CFR § 1010.230) Third-Party Payment guidelines. Verified via <tool_call>graphify_query. Decision: APPROVE"
+                    return "Narrative: The matching threshold is at or above 90%, which is compliant with FinCEN Advisory FIN-2010-A001 and 31 CFR § 1010.210 Third-Party Payment guidelines. Verified via <tool_call>graphify_query. Decision: APPROVE"
             else:
                 # 30% chance to make mistakes (non-degenerate group advantages)
                 choice = random.choice([1, 2, 3])
@@ -246,7 +246,7 @@ def reconcile_payment(bank_statement, invoice):
                         return "Narrative: High security policy, let's manually review. Checked via <tool_call>graphify_query. Decision: BLOCK"
                 elif choice == 2:
                     # Missing tool call
-                    return "Narrative: Lowering the threshold violates 31 CFR § 1010.230 CDD rules. Decision: BLOCK" if is_poisoned else "Narrative: Compliant with 31 CFR § 1010.230. Decision: APPROVE"
+                    return "Narrative: Lowering the threshold violates FinCEN Advisory FIN-2010-A001 and 31 CFR § 1010.210 AML rules. Decision: BLOCK" if is_poisoned else "Narrative: Compliant with 31 CFR § 1010.210. Decision: APPROVE"
                 else:
                     # Missing regulatory citation
                     return "Narrative: Low matching threshold. Queried the graph with <tool_call>graphify_query. Decision: BLOCK" if is_poisoned else "Narrative: High matching threshold. Queried the graph with <tool_call>graphify_query. Decision: APPROVE"

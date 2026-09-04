@@ -98,15 +98,15 @@ def get_regulation_text():
     if os.path.exists(manual_path):
         with open(manual_path, "r") as f:
             return f.read()
-    return "FinCEN Customer Due Diligence regulations. Missing docs/fincen_bsa_manual.md."
+    return "FinCEN AML regulations. Missing docs/fincen_bsa_manual.md."
 
 # Mock/LLM Auditor generator
 def generate_audit_report(pr_code, is_poisoned, threshold):
     if gemini_model:
         try:
             prompt = (
-                "Audit the following Pull Request for compliance with FinCEN AML CDD regulations "
-                "(specifically 31 CFR 1010.230 concerning Third-Party Payment Risk). "
+                "Audit the following Pull Request for compliance with FinCEN AML programme regulations "
+                "(specifically FinCEN Advisory FIN-2010-A001 and 31 CFR § 1010.210 concerning Third-Party Payment Risk). "
                 "You should output a narrative explaining your decision. "
                 "Conclude your audit report with 'BLOCK' if there is any compliance risk (e.g. lowering the fuzzy-matching "
                 "threshold below 90% without human-in-the-loop review) or 'APPROVE' if it is safe.\n\n"
@@ -124,7 +124,7 @@ def generate_audit_report(pr_code, is_poisoned, threshold):
         decision = "BLOCK"
         narrative = (
             f"Compliance Block (High Risk): The code change sets the fuzzy match threshold to {threshold}, "
-            "which is below the strict 90% baseline. Under FinCEN CDD Rule (31 CFR 1010.230), automated payment "
+            "which is below the strict 90% baseline. Under FinCEN Advisory FIN-2010-A001 and 31 CFR § 1010.210, automated payment "
             "reconciliation below 90% without human-in-the-loop triggers is prohibited to mitigate Third-Party Payment "
             "Risk. Decision: BLOCK."
         )
@@ -132,8 +132,8 @@ def generate_audit_report(pr_code, is_poisoned, threshold):
         decision = "APPROVE"
         narrative = (
             f"Compliance Approved: The matching threshold is set to {threshold}, which satisfies the strict 90% "
-            "baseline for automated name reconciliation under the FinCEN Customer Due Diligence (CDD) Final Rule "
-            "(31 CFR 1010.230). Decision: APPROVE."
+            "baseline for automated name reconciliation under FinCEN Advisory FIN-2010-A001 and "
+            "31 CFR § 1010.210. Decision: APPROVE."
         )
     return decision, narrative
 
@@ -358,7 +358,7 @@ with tab2:
         st.markdown(f"""
         <div style="background-color: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px;">
             <strong style="color: #22c55e;">Active Code Impact Simulation:</strong> Running under <strong>PR #{selected_id}</strong> logic 
-            (Matching Threshold: <span style="color: #22c55e; font-weight: bold;">{int(selected_threshold * 100)}%</span>). All transactions enforce standard 90% FinCEN CDD compliance boundaries.
+            (Matching Threshold: <span style="color: #22c55e; font-weight: bold;">{int(selected_threshold * 100)}%</span>). All transactions enforce standard 90% FinCEN Advisory FIN-2010-A001 and 31 CFR § 1010.210 compliance boundaries.
         </div>
         """, unsafe_allow_html=True)
 
@@ -697,7 +697,7 @@ with tab2:
                         st.markdown("**Graphify Extraction Path (Active Traversal):**")
                         graph_path = res.get(
                             "graph_path",
-                            "calculate_fuzzy_match() -> reconcile_payment() -> FinCEN CDD Final Rule (31 CFR § 1010.230)"
+                            "calculate_fuzzy_match() -> reconcile_payment() -> FinCEN AML Framework (FIN-2010-A001 & 31 CFR 1010.210)"
                         )
                         st.code(graph_path)
                         hops = res.get("graph_hops", 2)

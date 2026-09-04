@@ -117,7 +117,7 @@ The portal exposes two key operational areas:
 
 ## Repository Structure
 
-* `docs/fincen_bsa_manual.md`: Regulatory manual detailing CDD guidelines and thresholds.
+* `docs/fincen_bsa_manual.md`: Three-pillar regulatory compliance manual detailing TBML, structuring, and jurisdictional risk mandates.
 * `src/matcher_agent.py`: Baseline name-matching reconciliation engine.
 * `src/compliance_graph.py`: Knowledge graph retriever and AST-to-regulatory traversal engine.
 * `src/sar_generator.py`: FinCEN Form 111 Suspicious Activity Report dossier generator.

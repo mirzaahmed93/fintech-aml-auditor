@@ -149,10 +149,10 @@ class ComplianceEngine:
                 narrative = (
                     f"Tier 1 Compromised Approval: Match score ({score * 100:.1f}%) passed under the lowered "
                     f"code threshold ({threshold:.2%}), bypassing mandatory human review "
-                    f"under FinCEN CDD 31 CFR 1010.230 and FinCEN Advisory FIN-2010-A001."
+                    f"under FinCEN Advisory FIN-2010-A001 and 31 CFR § 1010.210."
                 )
             else:
-                narrative = "Tier 1 Auto-Approve: High name matching similarity and clean multi-vector risk profile satisfy regulatory CDD requirements."
+                narrative = "Tier 1 Auto-Approve: High name matching similarity and clean multi-vector risk profile satisfy regulatory AML programme requirements under 31 CFR § 1010.210."
                 
             return {
                 "decision": "APPROVE",

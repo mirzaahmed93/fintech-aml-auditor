@@ -60,7 +60,7 @@ class ComplianceGraph:
         if not self.graph or source_id not in self.graph or target_id not in self.graph:
             return {
                 "path_nodes": [],
-                "formatted_path": "src/matcher_agent.py -> reconcile_payment() -> [governed_by] -> 31 CFR 1010.230",
+                "formatted_path": "src/matcher_agent.py -> reconcile_payment() -> [governed_by] -> FinCEN AML Framework (FIN-2010-A001 & 31 CFR 1010.210)",
                 "hops": 2
             }
             
@@ -96,7 +96,7 @@ class ComplianceGraph:
         traversal = self.get_compliance_traversal(source_id, target_id)
         
         target_node = self.graph.nodes.get(target_id, {}) if self.graph else {}
-        rule_label = target_node.get("label", "FinCEN CDD Final Rule (31 CFR 1010.230)")
+        rule_label = target_node.get("label", "FinCEN AML Framework (FIN-2010-A001 & 31 CFR 1010.210)")
         source_file = target_node.get("source_file", "docs/fincen_bsa_manual.md")
         
         context_block = (

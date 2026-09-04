@@ -14,7 +14,7 @@ def generate_fincen_sar_dossier(tx, audit_res):
     composite_risk = audit_res.get("composite_risk", 0.0)
     risk_level = audit_res.get("risk_level", "HIGH")
     origin_country = getattr(tx, "origin_country", "US")
-    graph_path = audit_res.get("graph_path", "calculate_fuzzy_match() -> reconcile_payment() -> FinCEN CDD Final Rule (31 CFR 1010.230)")
+    graph_path = audit_res.get("graph_path", "calculate_fuzzy_match() -> reconcile_payment() -> FinCEN AML Framework (FIN-2010-A001 & 31 CFR 1010.210)")
     is_leak = audit_res.get("is_leak", False)
     
     # Classifications for individual vectors
