@@ -464,9 +464,13 @@ with tab2:
                 # Jurisdictional data
                 ctry = getattr(tx_item, "origin_country", "US")
                 if ctry not in jurisdiction_data:
-                    jurisdiction_data[ctry] = {"count": 0, "volume": 0.0, "high_risk": res_item.get("jurisdiction_risk", 0.0) > 0.50}
+                    jurisdiction_data[ctry] = {"count": 0, "volume": 0.0, "high_risk": False}
                 jurisdiction_data[ctry]["count"] += 1
                 jurisdiction_data[ctry]["volume"] += tx_item.amount
+                jurisdiction_data[ctry]["high_risk"] = (
+                    jurisdiction_data[ctry]["high_risk"]
+                    or res_item.get("jurisdiction_risk", 0.0) > 0.50
+                )
                 
                 # CTR structuring corridor data
                 corridor_x.append(f"TX-{idx+100}")
